@@ -1,0 +1,87 @@
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ['--markdown-linebreak-ext=md']
+
+  # Ruff - linting and formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.10
+    hooks:
+      # Linter
+      - id: ruff
+        args: ['--fix', '--exit-non-zero-on-fix']
+        types_or: [python, pyi]
+      # Formatter
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # Type checking with mypy
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.0.0
+          - pydantic-settings>=2.0.0
+          - typer>=0.21.0
+          - httpx>=0.28.0
+          - types-toml
+        args: ['--config-file=pyproject.toml']
+        pass_filenames: false
+        entry: mypy src/
+
+  # Conventional commit message validation
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: ['--strict']
+
+  # Check pyproject.toml
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24
+    hooks:
+      - id: validate-pyproject
+        additional_dependencies: ['validate-pyproject-schema-store[all]']
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.44.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix', '--disable', 'MD013', 'MD033', 'MD041', '--']
+
+  # YAML formatting
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.14.0
+    hooks:
+      - id: pretty-format-yaml
+        args: ['--autofix', '--indent=2']
+        exclude: '.github/workflows/.*'  # GitHub Actions have specific formatting
+
+  # Typos
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.31.1
+    hooks:
+      - id: typos
+        args: ['--force-exclude']
+
+ci:
+  autofix_commit_msg: 'style: auto-fix by pre-commit hooks'
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: 'chore: update pre-commit hooks'
+  autoupdate_schedule: weekly
+  skip: [mypy]  # Skip mypy in pre-commit.ci (runs in CI instead)
+  submodules: false

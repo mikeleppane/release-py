@@ -1,0 +1,128 @@
+name: Bug Report
+description: Report a bug or unexpected behavior in release-py
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us diagnose and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what went wrong.
+      placeholder: "When I run release-py update, it fails to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run `release-py update`
+        2. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: "The version should be bumped to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened.
+      placeholder: "Instead, I got an error..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What version of Python are you using?
+      options:
+        - "3.13"
+        - "3.12"
+        - "3.11"
+    validations:
+      required: true
+
+  - type: input
+    id: release-py-version
+    attributes:
+      label: release-py Version
+      description: What version of release-py are you using? (run `release-py --version`)
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: If relevant, paste your `[tool.release-py]` configuration from pyproject.toml.
+      render: toml
+      placeholder: |
+        [tool.release-py]
+        default_branch = "main"
+        ...
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error Messages / Logs
+      description: If applicable, paste any error messages or relevant logs.
+      render: shell
+      placeholder: |
+        Traceback (most recent call last):
+        ...
+
+  - type: input
+    id: git-version
+    attributes:
+      label: Git Version
+      description: What version of git are you using? (run `git --version`)
+      placeholder: "2.43.0"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before Submitting
+      description: Please verify the following before submitting.
+      options:
+        - label: I have searched the existing issues to make sure this bug hasn't been reported before.
+          required: true
+        - label: I have read the [documentation](https://github.com/release-py/release-py#readme).
+          required: true
+        - label: I am using Python 3.11 or later.
+          required: true

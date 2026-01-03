@@ -1,0 +1,64 @@
+name: Documentation Issue
+description: Report a problem or suggest an improvement to the documentation
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! Please provide details about the issue you found.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: Which documentation is affected?
+      options:
+        - README.md (User guide and examples)
+        - API documentation
+        - Configuration reference
+        - GitHub Actions documentation
+        - CLI help text
+        - Code comments/docstrings
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Describe what's wrong or missing in the documentation.
+      placeholder: |
+        The README doesn't explain how to...
+        The docstring for... is unclear about...
+        There's no documentation for the --dry-run flag...
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where is this issue located? (file path, section, or URL)
+      placeholder: "README.md, 'Configuration' section"
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: If you have a suggestion for how to fix or improve the documentation.
+      placeholder: "I suggest adding an example that shows..."
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any screenshots, examples, or other helpful details.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to contribute?
+      options:
+        - label: I'm willing to submit a pull request to fix this issue.

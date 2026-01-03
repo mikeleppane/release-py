@@ -1,0 +1,270 @@
+"""Pydantic models for release-py configuration.
+
+Configuration is read from pyproject.toml under [tool.release-py].
+All fields have sensible defaults for zero-config usage.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, Field
+
+
+class CommitsConfig(BaseModel):
+    """Configuration for conventional commit parsing.
+
+    Determines how commits map to version bump types.
+    """
+
+    types_major: list[str] = Field(
+        default_factory=list,
+        description="Commit types that trigger a major version bump",
+    )
+    types_minor: list[str] = Field(
+        default_factory=lambda: ["feat"],
+        description="Commit types that trigger a minor version bump",
+    )
+    types_patch: list[str] = Field(
+        default_factory=lambda: ["fix", "perf"],
+        description="Commit types that trigger a patch version bump",
+    )
+    breaking_pattern: str = Field(
+        default=r"BREAKING[ -]CHANGE:",
+        description="Regex pattern to detect breaking changes in commit body",
+    )
+    scope_regex: str | None = Field(
+        default=None,
+        description="Only process commits matching this scope (for monorepos)",
+    )
+    skip_release_patterns: list[str] = Field(
+        default_factory=lambda: ["[skip release]", "[release skip]", "[no release]"],
+        description="Patterns in commit messages that skip release (case-insensitive)",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class ChangelogConfig(BaseModel):
+    """Configuration for changelog generation via git-cliff."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Whether to generate changelog",
+    )
+    path: Path = Field(
+        default=Path("CHANGELOG.md"),
+        description="Path to the changelog file",
+    )
+    template: str | None = Field(
+        default=None,
+        description="Custom git-cliff template (path or inline)",
+    )
+    header: str | None = Field(
+        default=None,
+        description="Custom header for the changelog",
+    )
+    use_github_prs: bool = Field(
+        default=False,
+        description="Use GitHub PR-based changelog (recommended for squash merge workflows)",
+    )
+    ignore_authors: list[str] = Field(
+        default_factory=lambda: [
+            "dependabot[bot]",
+            "dependabot-preview[bot]",
+            "renovate[bot]",
+            "renovate-bot",
+            "github-actions[bot]",
+            "pre-commit-ci[bot]",
+            "codecov[bot]",
+            "semantic-release-bot",
+            "allcontributors[bot]",
+            "snyk-bot",
+            "greenkeeper[bot]",
+            "imgbot[bot]",
+            "depfu[bot]",
+            "pyup-bot",
+            "mergify[bot]",
+        ],
+        description="Authors to exclude from changelog (bots)",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class VersionConfig(BaseModel):
+    """Configuration for version management."""
+
+    initial_version: str = Field(
+        default="0.1.0",
+        description="Version to use for first release",
+    )
+    tag_prefix: str = Field(
+        default="v",
+        description="Prefix for git tags (e.g., 'v' for 'v1.0.0')",
+    )
+    pre_release: str | None = Field(
+        default=None,
+        description="Pre-release identifier (e.g., 'alpha', 'beta', 'rc')",
+    )
+    version_files: list[Path] = Field(
+        default_factory=list,
+        description="Additional files containing version to update",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class GitHubConfig(BaseModel):
+    """Configuration for GitHub integration."""
+
+    owner: str | None = Field(
+        default=None,
+        description="Repository owner (auto-detected from git remote if not set)",
+    )
+    repo: str | None = Field(
+        default=None,
+        description="Repository name (auto-detected from git remote if not set)",
+    )
+    api_url: str = Field(
+        default="https://api.github.com",
+        description="GitHub API URL (for GitHub Enterprise, e.g., https://github.mycompany.com/api/v3)",
+    )
+    release_pr_branch: str = Field(
+        default="release-py/release",
+        description="Branch name for release PRs",
+    )
+    release_pr_labels: list[str] = Field(
+        default_factory=lambda: ["release"],
+        description="Labels to apply to release PRs",
+    )
+    draft_releases: bool = Field(
+        default=False,
+        description="Create releases as drafts",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class PublishConfig(BaseModel):
+    """Configuration for PyPI publishing."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Whether to publish to PyPI",
+    )
+    registry: str = Field(
+        default="https://upload.pypi.org/legacy/",
+        description="PyPI registry URL",
+    )
+    tool: Literal["uv", "twine"] = Field(
+        default="uv",
+        description="Tool to use for publishing",
+    )
+    trusted_publishing: bool = Field(
+        default=True,
+        description="Use OIDC trusted publishing when available",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class PackagesConfig(BaseModel):
+    """Configuration for monorepo support."""
+
+    paths: list[str] = Field(
+        default_factory=list,
+        description="Package directories for monorepo (empty = single package at root)",
+    )
+    independent: bool = Field(
+        default=True,
+        description="Use independent versioning per package",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class HooksConfig(BaseModel):
+    """Configuration for pre/post release hooks.
+
+    Hooks are shell commands executed at specific points in the release process.
+    Commands can use template variables like {version}, {prev_version}, {bump_type}.
+    """
+
+    pre_bump: list[str] = Field(
+        default_factory=list,
+        description="Commands to run before version bump (e.g., ['npm run lint'])",
+    )
+    post_bump: list[str] = Field(
+        default_factory=list,
+        description="Commands to run after version bump (e.g., ['npm run build'])",
+    )
+    pre_release: list[str] = Field(
+        default_factory=list,
+        description="Commands to run before release (e.g., ['pytest'])",
+    )
+    post_release: list[str] = Field(
+        default_factory=list,
+        description="Commands to run after release (e.g., ['./scripts/notify.sh'])",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
+class ReleasePyConfig(BaseModel):
+    """Main configuration for release-py.
+
+    Read from pyproject.toml under [tool.release-py].
+    All fields have sensible defaults for zero-config usage.
+    """
+
+    # Core settings
+    default_branch: str = Field(
+        default="main",
+        description="Default branch for releases",
+    )
+    allow_dirty: bool = Field(
+        default=False,
+        description="Allow releases from dirty working directory",
+    )
+    tag_prefix: Annotated[str, Field(deprecated="Use version.tag_prefix instead")] = Field(
+        default="v",
+        description="Prefix for git tags (deprecated: use version.tag_prefix)",
+    )
+    changelog_path: Annotated[Path, Field(deprecated="Use changelog.path instead")] = Field(
+        default=Path("CHANGELOG.md"),
+        description="Path to changelog (deprecated: use changelog.path)",
+    )
+
+    # Sub-configurations
+    commits: CommitsConfig = Field(default_factory=CommitsConfig)
+    changelog: ChangelogConfig = Field(default_factory=ChangelogConfig)
+    version: VersionConfig = Field(default_factory=VersionConfig)
+    github: GitHubConfig = Field(default_factory=GitHubConfig)
+    publish: PublishConfig = Field(default_factory=PublishConfig)
+    packages: PackagesConfig = Field(default_factory=PackagesConfig)
+    hooks: HooksConfig = Field(default_factory=HooksConfig)
+
+    model_config = {"extra": "forbid"}
+
+    @property
+    def effective_tag_prefix(self) -> str:
+        """Get the effective tag prefix (preferring version.tag_prefix)."""
+        # If version.tag_prefix is explicitly set to something other than default,
+        # use it. Otherwise fall back to the top-level tag_prefix.
+        if self.version.tag_prefix != "v":
+            return self.version.tag_prefix
+        return self.tag_prefix
+
+    @property
+    def effective_changelog_path(self) -> Path:
+        """Get the effective changelog path (preferring changelog.path)."""
+        if self.changelog.path != Path("CHANGELOG.md"):
+            return self.changelog.path
+        return self.changelog_path
+
+    @property
+    def is_monorepo(self) -> bool:
+        """Check if this is a monorepo configuration."""
+        return len(self.packages.paths) > 0

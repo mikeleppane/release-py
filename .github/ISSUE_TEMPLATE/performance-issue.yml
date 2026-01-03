@@ -1,0 +1,106 @@
+name: Performance Issue
+description: Report a performance problem with release-py
+title: "[Performance]: "
+labels: ["performance", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a performance issue! Please provide as much detail as possible to help us investigate.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      description: Which part of release-py is experiencing performance issues?
+      options:
+        - Version calculation (analyzing commits)
+        - Changelog generation
+        - GitHub API operations (PR creation, release creation)
+        - PyPI publishing
+        - Configuration loading
+        - CLI startup time
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem Description
+      description: Describe the performance issue you're experiencing.
+      placeholder: |
+        The `release-py update` command takes 30+ seconds to complete...
+        Changelog generation is very slow when there are many commits...
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Performance Metrics
+      description: Provide specific numbers (execution time, memory usage, etc.)
+      placeholder: |
+        - Execution time: ~45 seconds
+        - Number of commits analyzed: 500
+        - Repository size: 10,000 commits total
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: Python Version
+      options:
+        - "3.13"
+        - "3.12"
+        - "3.11"
+    validations:
+      required: true
+
+  - type: input
+    id: release-py-version
+    attributes:
+      label: release-py Version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Your `[tool.release-py]` configuration if relevant.
+      render: toml
+
+  - type: textarea
+    id: profiling
+    attributes:
+      label: Profiling Data
+      description: If you have profiling data (e.g., from cProfile, py-spy), please share it.
+      render: text
+      placeholder: |
+        You can generate profiling data with:
+        python -m cProfile -s cumtime -m release_py.cli.app update
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Hardware specs, network conditions, or any other relevant information.
+      placeholder: |
+        - CPU: Apple M2
+        - RAM: 16GB
+        - Network: Corporate proxy
