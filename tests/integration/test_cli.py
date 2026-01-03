@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 from typer.testing import CliRunner
@@ -12,6 +13,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 runner = CliRunner()
+
+
+def strip_ansi(text: str) -> str:
+    """Strip ANSI escape codes from text."""
+    ansi_pattern = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_pattern.sub("", text)
 
 
 class TestCLIVersion:
@@ -47,31 +54,31 @@ class TestCLIHelp:
         """check --help shows options."""
         result = runner.invoke(app, ["check", "--help"])
         assert result.exit_code == 0
-        assert "--verbose" in result.stdout
+        assert "--verbose" in strip_ansi(result.stdout)
 
     def test_update_help(self):
         """update --help shows options."""
         result = runner.invoke(app, ["update", "--help"])
         assert result.exit_code == 0
-        assert "--execute" in result.stdout
+        assert "--execute" in strip_ansi(result.stdout)
 
     def test_release_pr_help(self):
         """release-pr --help shows options."""
         result = runner.invoke(app, ["release-pr", "--help"])
         assert result.exit_code == 0
-        assert "--dry-run" in result.stdout
+        assert "--dry-run" in strip_ansi(result.stdout)
 
     def test_release_help(self):
         """release --help shows options."""
         result = runner.invoke(app, ["release", "--help"])
         assert result.exit_code == 0
-        assert "--skip-publish" in result.stdout
+        assert "--skip-publish" in strip_ansi(result.stdout)
 
     def test_init_help(self):
         """init --help shows options."""
         result = runner.invoke(app, ["init", "--help"])
         assert result.exit_code == 0
-        assert "--force" in result.stdout
+        assert "--force" in strip_ansi(result.stdout)
 
 
 class TestCLICheck:
@@ -96,8 +103,9 @@ class TestCLICheckPr:
         """check-pr --help shows options."""
         result = runner.invoke(app, ["check-pr", "--help"])
         assert result.exit_code == 0
-        assert "--title" in result.stdout
-        assert "--require-scope" in result.stdout
+        output = strip_ansi(result.stdout)
+        assert "--title" in output
+        assert "--require-scope" in output
 
     def test_check_pr_valid_title(self):
         """check-pr with valid title succeeds."""

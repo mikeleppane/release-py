@@ -96,6 +96,7 @@ select = [
     "RUF",    # Ruff-specific rules
 ]
 ignore = [
+    "PLR0912",  # Too many branches (CLI commands have many branches)
     "PLR0913",  # Too many arguments
     "PLR2004",  # Magic value comparison
     "PLR0915",  # Too many statements (CLI commands are verbose)
