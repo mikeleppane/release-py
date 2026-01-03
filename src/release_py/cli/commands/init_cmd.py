@@ -364,7 +364,7 @@ jobs:
             "  [cyan]feat:[/] A new feature (minor version bump)\n"
             "  [cyan]fix:[/]  A bug fix (patch version bump)\n"
             "  [cyan]feat!:[/] Breaking change (major version bump)\n\n"
-            "[dim]Documentation: https://github.com/release-py/release-py[/]",
+            "[dim]Documentation: https://github.com/mikeleppane/release-py[/]",
             title="[green]Success[/]",
             border_style="green",
         )

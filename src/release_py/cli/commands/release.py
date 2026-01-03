@@ -316,6 +316,6 @@ def _generate_release_body(
     # Footer
     lines.append("---")
     lines.append("")
-    lines.append("_Released with [release-py](https://github.com/release-py/release-py)_")
+    lines.append("_Released with [release-py](https://github.com/mikeleppane/release-py)_")
 
     return "\n".join(lines)

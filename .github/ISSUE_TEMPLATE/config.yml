@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: GitHub Discussions
-    url: https://github.com/release-py/release-py/discussions
+    url: https://github.com/mikeleppane/release-py/discussions
     about: Ask questions and discuss ideas with the community
   - name: Documentation
-    url: https://github.com/release-py/release-py#readme
+    url: https://github.com/mikeleppane/release-py#readme
     about: Read the official documentation and user guides

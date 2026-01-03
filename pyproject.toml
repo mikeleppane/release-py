@@ -46,10 +46,10 @@ dev = [
 release-py = "release_py.cli.app:app"
 
 [project.urls]
-Homepage = "https://github.com/release-py/release-py"
-Documentation = "https://github.com/release-py/release-py#readme"
-Repository = "https://github.com/release-py/release-py"
-Issues = "https://github.com/release-py/release-py/issues"
+Homepage = "https://github.com/mikeleppane/release-py"
+Documentation = "https://github.com/mikeleppane/release-py#readme"
+Repository = "https://github.com/mikeleppane/release-py"
+Issues = "https://github.com/mikeleppane/release-py/issues"
 
 [build-system]
 requires = ["hatchling"]

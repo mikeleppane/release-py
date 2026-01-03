@@ -58,7 +58,7 @@ class GitLabClient:
         """
         raise NotImplementedError(
             "GitLab support is not yet implemented. "
-            "Contributions welcome at https://github.com/release-py/release-py"
+            "Contributions welcome at https://github.com/mikeleppane/release-py"
         )
 
     async def create_merge_request(
@@ -79,7 +79,7 @@ class GitLabClient:
         """
         raise NotImplementedError(
             "GitLab support is not yet implemented. "
-            "Contributions welcome at https://github.com/release-py/release-py"
+            "Contributions welcome at https://github.com/mikeleppane/release-py"
         )
 
     async def update_merge_request(
@@ -98,7 +98,7 @@ class GitLabClient:
         """
         raise NotImplementedError(
             "GitLab support is not yet implemented. "
-            "Contributions welcome at https://github.com/release-py/release-py"
+            "Contributions welcome at https://github.com/mikeleppane/release-py"
         )
 
     async def create_release(
@@ -119,7 +119,7 @@ class GitLabClient:
         """
         raise NotImplementedError(
             "GitLab support is not yet implemented. "
-            "Contributions welcome at https://github.com/release-py/release-py"
+            "Contributions welcome at https://github.com/mikeleppane/release-py"
         )
 
     async def get_release_by_tag(self, tag: str) -> Release | None:
@@ -133,5 +133,5 @@ class GitLabClient:
         """
         raise NotImplementedError(
             "GitLab support is not yet implemented. "
-            "Contributions welcome at https://github.com/release-py/release-py"
+            "Contributions welcome at https://github.com/mikeleppane/release-py"
         )

@@ -9,9 +9,9 @@ body:
         Have a question about using release-py? We're here to help!
 
         Before submitting, please:
-        - Check the [README documentation](https://github.com/release-py/release-py#readme)
-        - Search [existing issues](https://github.com/release-py/release-py/issues) for similar questions
-        - Consider using [GitHub Discussions](https://github.com/release-py/release-py/discussions) for general questions
+        - Check the [README documentation](https://github.com/mikeleppane/release-py#readme)
+        - Search [existing issues](https://github.com/mikeleppane/release-py/issues) for similar questions
+        - Consider using [GitHub Discussions](https://github.com/mikeleppane/release-py/discussions) for general questions
 
   - type: dropdown
     id: category

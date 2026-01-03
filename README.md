@@ -2,9 +2,9 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/release-py.svg)](https://pypi.org/project/release-py/)
 [![Python versions](https://img.shields.io/pypi/pyversions/release-py.svg)](https://pypi.org/project/release-py/)
-[![License](https://img.shields.io/github/license/release-py/release-py.svg)](https://github.com/release-py/release-py/blob/main/LICENSE)
-[![CI](https://github.com/release-py/release-py/actions/workflows/ci.yml/badge.svg)](https://github.com/release-py/release-py/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/release-py/release-py/branch/main/graph/badge.svg)](https://codecov.io/gh/release-py/release-py)
+[![License](https://img.shields.io/github/license/mikeleppane/release-py.svg)](https://github.com/mikeleppane/release-py/blob/main/LICENSE)
+[![CI](https://github.com/mikeleppane/release-py/actions/workflows/ci.yml/badge.svg)](https://github.com/mikeleppane/release-py/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/mikeleppane/release-py/branch/main/graph/badge.svg)](https://codecov.io/gh/mikeleppane/release-py)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
@@ -242,7 +242,7 @@ jobs:
     if: github.event_name == 'pull_request' && !github.event.pull_request.merged
     runs-on: ubuntu-latest
     steps:
-      - uses: release-py/release-py@v1
+      - uses: mikeleppane/release-py@v1
         with:
           command: check-pr
 
@@ -255,7 +255,7 @@ jobs:
         with:
           fetch-depth: 0  # Full history for changelog
 
-      - uses: release-py/release-py@v1
+      - uses: mikeleppane/release-py@v1
         with:
           command: release-pr
         id: release-pr
@@ -276,7 +276,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: release-py/release-py@v1
+      - uses: mikeleppane/release-py@v1
         with:
           command: release
         # PyPI trusted publishing - no token needed!
@@ -384,7 +384,7 @@ for details on the development process, code style, and how to submit pull reque
 
 ```bash
 # Clone the repository
-git clone https://github.com/release-py/release-py.git
+git clone https://github.com/mikeleppane/release-py.git
 cd release-py
 
 # Install dependencies

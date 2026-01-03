@@ -60,7 +60,7 @@ def main(
     2. Run [cyan]release-py release-pr[/] to create a release PR
     3. Merge the PR to trigger the release
 
-    [bold]Documentation:[/] https://github.com/release-py/release-py
+    [bold]Documentation:[/] https://github.com/mikeleppane/release-py
     """
 
 

@@ -26,11 +26,11 @@ behavior to the project maintainers.
 
 ### Finding Something to Work On
 
-- Check the [issue tracker](https://github.com/release-py/release-py/issues) for
+- Check the [issue tracker](https://github.com/mikeleppane/release-py/issues) for
   open issues
-- Look for issues labeled [`good first issue`](https://github.com/release-py/release-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- Look for issues labeled [`good first issue`](https://github.com/mikeleppane/release-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
   if you're new to the project
-- Issues labeled [`help wanted`](https://github.com/release-py/release-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+- Issues labeled [`help wanted`](https://github.com/mikeleppane/release-py/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
   are great opportunities to contribute
 
 ### Before You Start
@@ -306,10 +306,10 @@ Releases are automated using release-py itself! When changes are merged to `main
 
 ## Getting Help
 
-- **Questions:** Open a [GitHub Discussion](https://github.com/release-py/release-py/discussions)
+- **Questions:** Open a [GitHub Discussion](https://github.com/mikeleppane/release-py/discussions)
   or file an issue with the `question` label
-- **Bugs:** File an issue using the [bug report template](https://github.com/release-py/release-py/issues/new?template=bug-report.yml)
-- **Features:** File an issue using the [feature request template](https://github.com/release-py/release-py/issues/new?template=feature-request.yml)
+- **Bugs:** File an issue using the [bug report template](https://github.com/mikeleppane/release-py/issues/new?template=bug-report.yml)
+- **Features:** File an issue using the [feature request template](https://github.com/mikeleppane/release-py/issues/new?template=feature-request.yml)
 
 ---
 

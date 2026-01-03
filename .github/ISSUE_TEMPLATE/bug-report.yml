@@ -122,7 +122,7 @@ body:
       options:
         - label: I have searched the existing issues to make sure this bug hasn't been reported before.
           required: true
-        - label: I have read the [documentation](https://github.com/release-py/release-py#readme).
+        - label: I have read the [documentation](https://github.com/mikeleppane/release-py#readme).
           required: true
         - label: I am using Python 3.11 or later.
           required: true
