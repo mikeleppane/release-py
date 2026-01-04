@@ -134,7 +134,7 @@ class TestReleasePyConfig:
             version=VersionConfig(pre_release="alpha"),
             branches={
                 "beta": BranchConfig(match="beta", prerelease=True, prerelease_token="beta"),
-            }
+            },
         )
 
         # Branch config overrides
@@ -212,9 +212,7 @@ class TestChangelogConfig:
 
     def test_commit_template(self):
         """Custom commit template."""
-        config = ChangelogConfig(
-            commit_template="{description} by @{author} ({hash})"
-        )
+        config = ChangelogConfig(commit_template="{description} by @{author} ({hash})")
         assert config.commit_template == "{description} by @{author} ({hash})"
 
 

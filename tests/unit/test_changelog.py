@@ -362,9 +362,7 @@ class TestFormatCommitEntry:
 
     def test_format_with_custom_template(self, sample_parsed_commit: ParsedCommit):
         """Format commit with custom template."""
-        config = ChangelogConfig(
-            commit_template="{description} by @{author} ({hash})"
-        )
+        config = ChangelogConfig(commit_template="{description} by @{author} ({hash})")
         result = format_commit_entry(sample_parsed_commit, config)
 
         assert result == "add new feature by @Test Author (abc1234)"
@@ -379,9 +377,7 @@ class TestFormatCommitEntry:
             is_breaking=False,
             is_conventional=True,
         )
-        config = ChangelogConfig(
-            commit_template="[{type}] {scope}: {description} - {author}"
-        )
+        config = ChangelogConfig(commit_template="[{type}] {scope}: {description} - {author}")
         result = format_commit_entry(pc, config)
 
         assert result == "[feat] core: new feature - Test Author"
@@ -495,9 +491,7 @@ class TestGenerateNativeChangelog:
             is_breaking=False,
             is_conventional=True,
         )
-        config = ChangelogConfig(
-            section_headers={"feat": "🚀 New Features"}
-        )
+        config = ChangelogConfig(section_headers={"feat": "🚀 New Features"})
         version = Version(1, 0, 0)
 
         result = generate_native_changelog([pc], version, config)
@@ -566,9 +560,7 @@ class TestGenerateCliffConfig:
     def test_generate_config_uses_section_headers(self):
         """Generated config uses custom section headers."""
         config = ReleasePyConfig(
-            changelog=ChangelogConfig(
-                section_headers={"feat": "🚀 New Features"}
-            )
+            changelog=ChangelogConfig(section_headers={"feat": "🚀 New Features"})
         )
         result = generate_cliff_config(config)
 
@@ -605,9 +597,7 @@ class TestGenerateCliffConfig:
         """Generated config uses custom tag prefix."""
         from release_py.config.models import VersionConfig
 
-        config = ReleasePyConfig(
-            version=VersionConfig(tag_prefix="release-")
-        )
+        config = ReleasePyConfig(version=VersionConfig(tag_prefix="release-"))
         result = generate_cliff_config(config)
 
         assert 'tag_pattern = "release-[0-9]*"' in result
@@ -657,4 +647,4 @@ class TestGenerateCliffConfig:
         result = generate_cliff_config(config)
 
         # Quotes should be escaped
-        assert r'\"' in result
+        assert r"\"" in result

@@ -411,7 +411,9 @@ class TestE2EUpdateWithVersionFiles:
         """Update command updates __init__.py in src/ layout."""
         # Disable lock file updates to avoid subprocess.run mock issues
         pyproject = src_layout_project / "pyproject.toml"
-        content = pyproject.read_text().replace("update_lock_file = true", "update_lock_file = false")
+        content = pyproject.read_text().replace(
+            "update_lock_file = true", "update_lock_file = false"
+        )
         pyproject.write_text(content)
 
         with patch("release_py.core.changelog.generate_changelog") as mock_changelog:
@@ -459,7 +461,9 @@ class TestE2EUpdateWithVersionFiles:
         """Update command works with Poetry project."""
         # Disable lock file updates to avoid subprocess.run mock issues
         pyproject_path = poetry_project / "pyproject.toml"
-        content = pyproject_path.read_text().replace("update_lock_file = true", "update_lock_file = false")
+        content = pyproject_path.read_text().replace(
+            "update_lock_file = true", "update_lock_file = false"
+        )
         pyproject_path.write_text(content)
 
         with patch("release_py.core.changelog.generate_changelog") as mock_changelog:
@@ -481,7 +485,9 @@ class TestE2EUpdateWithVersionFiles:
         """Update command handles major bump in PDM project."""
         # Disable lock file updates to avoid subprocess.run mock issues
         pyproject_path = pdm_project / "pyproject.toml"
-        content = pyproject_path.read_text().replace("update_lock_file = true", "update_lock_file = false")
+        content = pyproject_path.read_text().replace(
+            "update_lock_file = true", "update_lock_file = false"
+        )
         pyproject_path.write_text(content)
 
         with patch("release_py.core.changelog.generate_changelog") as mock_changelog:
@@ -613,9 +619,10 @@ auto_detect_version_files = true
 
     def test_lock_file_update_tool_not_found(self, src_layout_project: Path):
         """Handle case when lock file tool (uv/poetry/pdm) not found."""
-        with patch("release_py.core.changelog.generate_changelog") as mock_changelog, \
-             patch("shutil.which", return_value=None):  # Tool not found
-
+        with (
+            patch("release_py.core.changelog.generate_changelog") as mock_changelog,
+            patch("shutil.which", return_value=None),
+        ):  # Tool not found
             mock_changelog.return_value = "## [1.1.0]"
 
             result = runner.invoke(app, ["update", str(src_layout_project), "--execute"])
@@ -752,10 +759,10 @@ class TestVersionPatternVariations:
 
         # Test different spacing patterns
         patterns = [
-            '__version__="1.0.0"',      # No spaces
-            '__version__ = "1.0.0"',    # Normal spacing
+            '__version__="1.0.0"',  # No spaces
+            '__version__ = "1.0.0"',  # Normal spacing
             '__version__  =  "1.0.0"',  # Extra spaces
-            '__version__   =   "1.0.0"',# Lots of spaces
+            '__version__   =   "1.0.0"',  # Lots of spaces
         ]
 
         for pattern in patterns:

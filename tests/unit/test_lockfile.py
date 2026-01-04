@@ -157,8 +157,9 @@ class TestUpdateLockFile:
         """Successfully update poetry.lock."""
         (tmp_path / "poetry.lock").write_text("# lock")
 
-        with patch("subprocess.run") as mock_run, patch(
-            "shutil.which", return_value="/usr/bin/poetry"
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("shutil.which", return_value="/usr/bin/poetry"),
         ):
             mock_run.return_value = MagicMock(returncode=0)
 
@@ -203,8 +204,9 @@ class TestUpdateLockFile:
         """Auto-detect package manager when not specified."""
         (tmp_path / "poetry.lock").write_text("# lock")
 
-        with patch("subprocess.run") as mock_run, patch(
-            "shutil.which", return_value="/usr/bin/poetry"
+        with (
+            patch("subprocess.run") as mock_run,
+            patch("shutil.which", return_value="/usr/bin/poetry"),
         ):
             mock_run.return_value = MagicMock(returncode=0)
 

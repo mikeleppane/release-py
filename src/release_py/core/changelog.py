@@ -539,4 +539,3 @@ def _get_default_body_template() -> str:
 def _escape_toml(value: str) -> str:
     """Escape a string for TOML."""
     return value.replace("\\", "\\\\").replace('"', '\\"')
-
