@@ -1,5 +1,5 @@
 [project]
-name = "release-py"
+name = "py-release"
 version = "0.1.0"
 description = "Best-in-class Python release automation, inspired by release-plz"
 readme = "README.md"
@@ -28,6 +28,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "httpx>=0.28.0",
+    "git-cliff>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -43,7 +44,7 @@ dev = [
 ]
 
 [project.scripts]
-release-py = "release_py.cli.app:app"
+py-release = "release_py.cli.app:app"
 
 [project.urls]
 Homepage = "https://github.com/mikeleppane/release-py"
@@ -136,6 +137,9 @@ show_column_numbers = true
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_decorators = false
+check_untyped_defs = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -154,19 +158,19 @@ exclude_lines = [
     "@abstractmethod",
 ]
 
-[tool.release-py]
+[tool.py-release]
 default_branch = "main"
 tag_prefix = "v"
 changelog_path = "CHANGELOG.md"
 
-[tool.release-py.commits]
+[tool.py-release.commits]
 types_minor = ["feat"]
 types_patch = ["fix", "perf", "docs", "refactor", "style", "test", "build", "ci"]
 
-[tool.release-py.github]
-release_pr_branch = "release-py/release"
+[tool.py-release.github]
+release_pr_branch = "py-release/release"
 release_pr_labels = ["release"]
 
-[tool.release-py.publish]
+[tool.py-release.publish]
 registry = "https://upload.pypi.org/legacy/"
 tool = "uv"

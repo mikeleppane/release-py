@@ -15,6 +15,7 @@ from release_py.config.loader import (
     load_pyproject_toml,
 )
 from release_py.config.models import (
+    BranchConfig,
     ChangelogConfig,
     CommitsConfig,
     GitHubConfig,
@@ -47,7 +48,7 @@ class TestReleasePyConfig:
         assert config.commits.types_patch == ["fix", "perf"]
         assert config.changelog.enabled is True
         assert config.version.initial_version == "0.1.0"
-        assert config.github.release_pr_branch == "release-py/release"
+        assert config.github.release_pr_branch == "py-release/release"
         assert config.publish.tool == "uv"
 
     def test_effective_tag_prefix(self):
@@ -65,6 +66,80 @@ class TestReleasePyConfig:
 
         config = ReleasePyConfig(packages=PackagesConfig(paths=["packages/core"]))
         assert config.is_monorepo
+
+    def test_get_branch_config_exact_match(self):
+        """get_branch_config returns matching branch config."""
+        config = ReleasePyConfig(
+            branches={
+                "main": BranchConfig(match="main", prerelease=False),
+                "beta": BranchConfig(match="beta", prerelease=True, prerelease_token="beta"),
+            }
+        )
+
+        main_config = config.get_branch_config("main")
+        assert main_config is not None
+        assert main_config.prerelease is False
+
+        beta_config = config.get_branch_config("beta")
+        assert beta_config is not None
+        assert beta_config.prerelease is True
+        assert beta_config.prerelease_token == "beta"
+
+    def test_get_branch_config_no_match(self):
+        """get_branch_config returns None when no match."""
+        config = ReleasePyConfig(
+            branches={
+                "main": BranchConfig(match="main"),
+            }
+        )
+
+        assert config.get_branch_config("develop") is None
+
+    def test_get_branch_config_wildcard(self):
+        """get_branch_config supports wildcard patterns."""
+        config = ReleasePyConfig(
+            branches={
+                "release": BranchConfig(match="release/*", prerelease=True, prerelease_token="rc"),
+            }
+        )
+
+        rc_config = config.get_branch_config("release/1.0")
+        assert rc_config is not None
+        assert rc_config.prerelease_token == "rc"
+
+    def test_get_effective_prerelease_from_branch(self):
+        """get_effective_prerelease returns branch-based prerelease token."""
+        config = ReleasePyConfig(
+            branches={
+                "beta": BranchConfig(match="beta", prerelease=True, prerelease_token="beta"),
+            }
+        )
+
+        assert config.get_effective_prerelease("beta") == "beta"
+        assert config.get_effective_prerelease("main") is None
+
+    def test_get_effective_prerelease_fallback(self):
+        """get_effective_prerelease falls back to version.pre_release."""
+        config = ReleasePyConfig(
+            version=VersionConfig(pre_release="alpha"),
+        )
+
+        # No branch config, falls back to version.pre_release
+        assert config.get_effective_prerelease("any-branch") == "alpha"
+
+    def test_get_effective_prerelease_branch_overrides_version(self):
+        """Branch config overrides version.pre_release."""
+        config = ReleasePyConfig(
+            version=VersionConfig(pre_release="alpha"),
+            branches={
+                "beta": BranchConfig(match="beta", prerelease=True, prerelease_token="beta"),
+            }
+        )
+
+        # Branch config overrides
+        assert config.get_effective_prerelease("beta") == "beta"
+        # Non-matching branch falls back to version.pre_release
+        assert config.get_effective_prerelease("main") == "alpha"
 
 
 class TestCommitsConfig:
@@ -99,6 +174,47 @@ class TestChangelogConfig:
 
         assert config.enabled is True
         assert config.path == Path("CHANGELOG.md")
+        assert config.show_authors is False
+        assert config.show_commit_hash is False
+        assert config.commit_template is None
+
+    def test_default_section_headers(self):
+        """Default section headers have emojis."""
+        config = ChangelogConfig()
+
+        assert "✨" in config.section_headers["feat"]
+        assert "🐛" in config.section_headers["fix"]
+        assert "⚠️" in config.section_headers["breaking"]
+
+    def test_custom_section_headers(self):
+        """Custom section headers can be configured."""
+        config = ChangelogConfig(
+            section_headers={
+                "feat": "New Features",
+                "fix": "Bug Fixes",
+                "breaking": "BREAKING CHANGES",
+            }
+        )
+
+        assert config.section_headers["feat"] == "New Features"
+        assert config.section_headers["fix"] == "Bug Fixes"
+
+    def test_show_authors(self):
+        """Show authors option."""
+        config = ChangelogConfig(show_authors=True)
+        assert config.show_authors is True
+
+    def test_show_commit_hash(self):
+        """Show commit hash option."""
+        config = ChangelogConfig(show_commit_hash=True)
+        assert config.show_commit_hash is True
+
+    def test_commit_template(self):
+        """Custom commit template."""
+        config = ChangelogConfig(
+            commit_template="{description} by @{author} ({hash})"
+        )
+        assert config.commit_template == "{description} by @{author} ({hash})"
 
 
 class TestVersionConfig:
@@ -122,7 +238,7 @@ class TestGitHubConfig:
 
         assert config.owner is None
         assert config.repo is None
-        assert config.release_pr_branch == "release-py/release"
+        assert config.release_pr_branch == "py-release/release"
         assert config.release_pr_labels == ["release"]
 
 
@@ -160,6 +276,7 @@ class TestHooksConfig:
         assert config.post_bump == []
         assert config.pre_release == []
         assert config.post_release == []
+        assert config.build is None
 
     def test_custom_hooks(self):
         """Custom hooks can be configured."""
@@ -182,6 +299,53 @@ class TestHooksConfig:
         )
 
         assert len(config.pre_release) == 3
+
+    def test_build_hook(self):
+        """Build hook can be configured."""
+        config = HooksConfig(
+            build="python -m build --sdist --wheel",
+        )
+
+        assert config.build == "python -m build --sdist --wheel"
+
+
+class TestBranchConfig:
+    """Tests for BranchConfig model (multi-branch release channels)."""
+
+    def test_exact_match(self):
+        """Branch config matches exact branch name."""
+        config = BranchConfig(match="main")
+
+        assert config.matches_branch("main")
+        assert not config.matches_branch("beta")
+        assert not config.matches_branch("main-feature")
+
+    def test_wildcard_match(self):
+        """Branch config matches wildcard patterns."""
+        config = BranchConfig(match="release/*")
+
+        assert config.matches_branch("release/1.0")
+        assert config.matches_branch("release/2.0-beta")
+        assert not config.matches_branch("release")
+        assert not config.matches_branch("main")
+
+    def test_prerelease_defaults(self):
+        """Prerelease defaults to False."""
+        config = BranchConfig(match="main")
+
+        assert config.prerelease is False
+        assert config.prerelease_token is None
+
+    def test_prerelease_channel(self):
+        """Prerelease channel configuration."""
+        config = BranchConfig(
+            match="beta",
+            prerelease=True,
+            prerelease_token="beta",
+        )
+
+        assert config.prerelease is True
+        assert config.prerelease_token == "beta"
 
 
 class TestCommitsConfigSkipPatterns:
@@ -265,10 +429,10 @@ class TestExtractReleasePyConfig:
     """Tests for extract_release_py_config()."""
 
     def test_extract_existing_config(self):
-        """Extract existing release-py config."""
+        """Extract existing py-release config."""
         pyproject = {
             "tool": {
-                "release-py": {
+                "py-release": {
                     "default_branch": "develop",
                 }
             }
@@ -296,7 +460,7 @@ class TestLoadConfig:
         assert config.default_branch == "main"
 
     def test_load_defaults_when_no_config(self, tmp_path: Path):
-        """Load defaults when no [tool.release-py] section."""
+        """Load defaults when no [tool.py-release] section."""
         pyproject = tmp_path / "pyproject.toml"
         pyproject.write_text(
             """\

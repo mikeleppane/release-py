@@ -119,9 +119,18 @@ def run_update(
         next_version = current_version.bump(bump_type)
 
     # Apply pre-release identifier if specified
-    effective_prerelease = prerelease or config.version.pre_release
+    # Priority: CLI flag > branch config > version.pre_release
+    current_branch = repo.get_current_branch()
+    effective_prerelease = prerelease or config.get_effective_prerelease(current_branch)
+
     if effective_prerelease:
         next_version = next_version.with_prerelease(effective_prerelease)
+        branch_config = config.get_branch_config(current_branch)
+        if branch_config and branch_config.prerelease:
+            console.print(
+                f"[dim]Auto-detected pre-release channel [cyan]{effective_prerelease}[/] "
+                f"from branch [cyan]{current_branch}[/][/]"
+            )
 
     mode_str = "[green]EXECUTING[/]" if execute else "[yellow]DRY-RUN[/]"
     if is_first_release:
@@ -160,7 +169,12 @@ def run_update(
         )
 
     # Actually apply changes
-    from release_py.project.pyproject import update_pyproject_version, update_version_file
+    from release_py.project.pyproject import (
+        detect_version_files,
+        update_pyproject_version,
+        update_version_file,
+        update_version_in_plain_file,
+    )
 
     try:
         update_pyproject_version(project_path, str(next_version))
@@ -169,24 +183,67 @@ def run_update(
         err_console.print(f"[red]Error updating pyproject.toml:[/] {e}")
         raise SystemExit(1) from e
 
-    # Update additional version files
+    # Update additional version files (explicitly configured)
     for version_file in config.version.version_files:
         version_file_path = project_path / version_file
         try:
-            update_version_file(version_file_path, str(next_version))
+            if version_file_path.name == "VERSION":
+                update_version_in_plain_file(version_file_path, str(next_version))
+            else:
+                update_version_file(version_file_path, str(next_version))
             console.print(f"  [green]✓[/] Updated version in {version_file}")
         except Exception as e:
             err_console.print(f"[red]Error updating {version_file}:[/] {e}")
             raise SystemExit(1) from e
 
+    # Auto-detect and update version files if enabled
+    if config.version.auto_detect_version_files:
+        detected_files = detect_version_files(project_path)
+        for version_file_path in detected_files:
+            # Skip if already in explicit list
+            relative_path = version_file_path.relative_to(project_path)
+            if relative_path in config.version.version_files:
+                continue
+            try:
+                if version_file_path.name == "VERSION":
+                    update_version_in_plain_file(version_file_path, str(next_version))
+                else:
+                    update_version_file(version_file_path, str(next_version))
+                console.print(f"  [green]✓[/] Updated version in {relative_path} (auto-detected)")
+            except Exception as e:
+                # Non-fatal for auto-detected files
+                console.print(f"  [yellow]⚠[/] Could not update {relative_path}: {e}")
+
+    # Update lock file if enabled
+    if config.version.update_lock_file:
+        from release_py.project.lockfile import should_update_lock_file, update_lock_file
+
+        if should_update_lock_file(project_path):
+            success, message = update_lock_file(project_path)
+            if success:
+                console.print(f"  [green]✓[/] {message}")
+            else:
+                console.print(f"  [yellow]⚠[/] {message}")
+
     # Generate changelog
     try:
         from release_py.core.changelog import generate_changelog
+
+        # Try to get GitHub repo for richer changelog
+        github_repo_str: str | None = None
+        try:
+            owner, repo_name = repo.parse_github_remote()
+            github_owner = config.github.owner or owner
+            github_repo = config.github.repo or repo_name
+            github_repo_str = f"{github_owner}/{github_repo}"
+        except Exception:
+            pass  # Not a GitHub repo or can't parse
 
         changelog_content = generate_changelog(
             repo=repo,
             version=next_version,
             config=config,
+            github_repo=github_repo_str,
         )
 
         # Write changelog
@@ -225,7 +282,7 @@ def run_update(
             "  1. Review the changes\n"
             f"  2. Commit: [cyan]git add . && git commit -m "
             f"'chore(release): prepare {next_version}'[/]\n"
-            "  3. Release: [cyan]release-py release[/]",
+            "  3. Release: [cyan]py-release release[/]",
             title="[green]Update Complete[/]",
             border_style="green",
         )

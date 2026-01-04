@@ -1,6 +1,6 @@
 """Implementation of the 'init' command.
 
-The init command sets up release-py configuration in a project.
+The init command sets up py-release configuration in a project.
 """
 
 from __future__ import annotations
@@ -72,7 +72,7 @@ def run_init(
     console.print()
     console.print(
         Panel(
-            "[bold]Welcome to release-py![/]\n\n"
+            "[bold]Welcome to py-release![/]\n\n"
             "This wizard will help you set up automated releases for your project.",
             title="[blue]Setup Wizard[/]",
             border_style="blue",
@@ -94,11 +94,11 @@ def run_init(
     with pyproject_path.open("rb") as f:
         pyproject_data = tomllib.load(f)
 
-    tool_config = pyproject_data.get("tool", {}).get("release-py")
+    tool_config = pyproject_data.get("tool", {}).get("py-release")
 
     if tool_config and not force:
         console.print(
-            "[yellow]release-py is already configured in this project.[/]\n"
+            "[yellow]py-release is already configured in this project.[/]\n"
             "Use [cyan]--force[/] to overwrite the existing configuration."
         )
         return
@@ -156,28 +156,28 @@ def run_init(
     changelog_section = ""
     if use_squash_merge:
         changelog_section = """
-[tool.release-py.changelog]
+[tool.py-release.changelog]
 # Use GitHub PR-based changelog (recommended for squash merge workflows)
 use_github_prs = true
 """
 
     config_toml = f"""
-[tool.release-py]
+[tool.py-release]
 default_branch = "{default_branch}"
 tag_prefix = "{tag_prefix}"
 changelog_path = "CHANGELOG.md"
 
-[tool.release-py.commits]
+[tool.py-release.commits]
 # Commit types that trigger a minor version bump
 types_minor = ["feat"]
 # Commit types that trigger a patch version bump
 types_patch = ["fix", "perf", "docs", "refactor", "style", "test", "build", "ci"]
 {changelog_section}
-[tool.release-py.github]
-release_pr_branch = "release-py/release"
+[tool.py-release.github]
+release_pr_branch = "py-release/release"
 release_pr_labels = ["release"]
 
-[tool.release-py.publish]
+[tool.py-release.publish]
 enabled = true
 tool = "uv"
 """
@@ -277,13 +277,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install release-py
-        run: uv tool install release-py
+      - name: Install py-release
+        run: uv tool install py-release
 
       - name: Create Release PR
         env:
           GITHUB_TOKEN: ${{{{ secrets.GITHUB_TOKEN }}}}
-        run: release-py release-pr
+        run: py-release release-pr
 
   # Perform release when Release PR is merged
   release:
@@ -305,13 +305,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install release-py
-        run: uv tool install release-py
+      - name: Install py-release
+        run: uv tool install py-release
 
       - name: Perform Release
         env:
           GITHUB_TOKEN: ${{{{ secrets.GITHUB_TOKEN }}}}
-        run: release-py release
+        run: py-release release
 """
 
         workflow_path.write_text(workflow_content)
@@ -340,13 +340,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Install release-py
-        run: uv tool install release-py
+      - name: Install py-release
+        run: uv tool install py-release
 
       - name: Check PR Title
         env:
           GITHUB_PR_TITLE: ${{ github.event.pull_request.title }}
-        run: release-py check-pr
+        run: py-release check-pr
 """
             pr_check_path.write_text(pr_check_content)
             console.print(f"  [green]✓[/] Created [cyan]{pr_check_path}[/]")
@@ -358,8 +358,8 @@ jobs:
             "[bold]Next steps:[/]\n"
             "  1. Review the configuration in [cyan]pyproject.toml[/]\n"
             "  2. Make some commits using conventional commit format\n"
-            "  3. Run [cyan]release-py check[/] to preview your first release\n"
-            "  4. Run [cyan]release-py release-pr[/] to create a release PR\n\n"
+            "  3. Run [cyan]py-release check[/] to preview your first release\n"
+            "  4. Run [cyan]py-release release-pr[/] to create a release PR\n\n"
             "[bold]Conventional Commit Format:[/]\n"
             "  [cyan]feat:[/] A new feature (minor version bump)\n"
             "  [cyan]fix:[/]  A bug fix (patch version bump)\n"

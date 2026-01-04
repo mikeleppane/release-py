@@ -25,12 +25,16 @@ def build_package(
     project_path: Path,
     *,
     clean: bool = True,
+    custom_command: str | None = None,
+    version: str | None = None,
 ) -> list[Path]:
-    """Build the package using uv or hatch.
+    """Build the package using uv, hatch, or a custom command.
 
     Args:
         project_path: Path to the project directory
         clean: Whether to clean dist/ before building
+        custom_command: Custom build command (supports {version}, {project_path} variables)
+        version: Version being built (for template substitution)
 
     Returns:
         List of paths to built distribution files
@@ -44,28 +48,49 @@ def build_package(
     if clean and dist_dir.exists():
         shutil.rmtree(dist_dir)
 
-    # Try uv first, then hatch, then python -m build
-    build_commands = [
-        (["uv", "build"], "uv"),
-        (["hatch", "build"], "hatch"),
-        (["python", "-m", "build"], "python-build"),
-    ]
+    # Use custom command if provided
+    if custom_command:
+        # Substitute template variables
+        template_vars = {
+            "version": version or "",
+            "project_path": str(project_path),
+        }
+        expanded_cmd = custom_command.format(**template_vars)
 
-    for cmd, tool_name in build_commands:
-        if shutil.which(cmd[0]) is not None:
-            try:
-                subprocess.run(
-                    cmd,
-                    cwd=project_path,
-                    capture_output=True,
-                    text=True,
-                    check=True,
-                )
-                break
-            except subprocess.CalledProcessError as e:
-                raise BuildError(f"Build with {tool_name} failed:\n{e.stderr}") from e
+        try:
+            subprocess.run(
+                expanded_cmd,
+                shell=True,
+                cwd=project_path,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise BuildError(f"Custom build command failed:\n{e.stderr}") from e
     else:
-        raise BuildError("No build tool found. Install one of: uv, hatch, or build")
+        # Try uv first, then hatch, then python -m build
+        build_commands = [
+            (["uv", "build"], "uv"),
+            (["hatch", "build"], "hatch"),
+            (["python", "-m", "build"], "python-build"),
+        ]
+
+        for cmd, tool_name in build_commands:
+            if shutil.which(cmd[0]) is not None:
+                try:
+                    subprocess.run(
+                        cmd,
+                        cwd=project_path,
+                        capture_output=True,
+                        text=True,
+                        check=True,
+                    )
+                    break
+                except subprocess.CalledProcessError as e:
+                    raise BuildError(f"Build with {tool_name} failed:\n{e.stderr}") from e
+        else:
+            raise BuildError("No build tool found. Install one of: uv, hatch, or build")
 
     # Find built files
     if not dist_dir.exists():

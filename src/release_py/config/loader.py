@@ -66,23 +66,23 @@ def load_pyproject_toml(path: Path) -> dict[str, Any]:
 
 
 def extract_release_py_config(pyproject: dict[str, Any]) -> dict[str, Any]:
-    """Extract [tool.release-py] section from pyproject.toml data.
+    """Extract [tool.py-release] section from pyproject.toml data.
 
     Args:
         pyproject: Parsed pyproject.toml data
 
     Returns:
-        The release-py configuration dict (empty if not present)
+        The py-release configuration dict (empty if not present)
     """
     tool: dict[str, Any] = pyproject.get("tool", {})
-    result: dict[str, Any] = tool.get("release-py", {})
+    result: dict[str, Any] = tool.get("py-release", {})
     return result
 
 
 def load_config(path: Path | None = None) -> ReleasePyConfig:
-    """Load release-py configuration from pyproject.toml.
+    """Load py-release configuration from pyproject.toml.
 
-    Configuration is read from [tool.release-py] section.
+    Configuration is read from [tool.py-release] section.
     Missing config uses sensible defaults.
 
     Args:
@@ -155,6 +155,9 @@ def get_project_name(path: Path | None = None) -> str:
 def get_project_version(path: Path | None = None) -> str:
     """Get the project version from pyproject.toml.
 
+    Supports both PEP 621 format ([project].version) and
+    Poetry format ([tool.poetry].version).
+
     Args:
         path: Path to pyproject.toml or directory to search from
 
@@ -174,12 +177,20 @@ def get_project_version(path: Path | None = None) -> str:
 
     pyproject_data = load_pyproject_toml(pyproject_path)
 
-    try:
-        version: str = pyproject_data["project"]["version"]
-    except KeyError as e:
-        raise ConfigValidationError(
-            f"Missing [project].version in {pyproject_path}. "
-            "Dynamic versioning is not yet supported."
-        ) from e
-    else:
-        return version
+    # Try PEP 621 format first
+    if "project" in pyproject_data and "version" in pyproject_data["project"]:
+        return str(pyproject_data["project"]["version"])
+
+    # Try Poetry format
+    if (
+        "tool" in pyproject_data
+        and "poetry" in pyproject_data["tool"]
+        and "version" in pyproject_data["tool"]["poetry"]
+    ):
+        return str(pyproject_data["tool"]["poetry"]["version"])
+
+    raise ConfigValidationError(
+        f"Missing version in {pyproject_path}. "
+        "Expected [project].version or [tool.poetry].version. "
+        "Dynamic versioning is not yet supported."
+    )

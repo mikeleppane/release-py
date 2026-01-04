@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -12,11 +11,11 @@ import pytest
 from release_py.config.models import ReleasePyConfig
 from release_py.core.changelog import (
     generate_changelog,
-    generate_fallback_changelog,
+    get_bump_from_git_cliff,
 )
-from release_py.core.version import Version
+from release_py.core.version import BumpType, Version
 from release_py.exceptions import ChangelogError, GitCliffError
-from release_py.vcs.git import Commit, GitRepository
+from release_py.vcs.git import GitRepository
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -28,42 +27,6 @@ def mock_repo(tmp_path: Path) -> MagicMock:
     repo = MagicMock(spec=GitRepository)
     repo.path = tmp_path
     return repo
-
-
-@pytest.fixture
-def sample_commits() -> list[Commit]:
-    """Sample commits for testing."""
-    now = datetime.now()
-    return [
-        Commit(
-            sha="abc1234",
-            message="feat: add new feature",
-            author_name="Test",
-            author_email="test@test.com",
-            date=now,
-        ),
-        Commit(
-            sha="def5678",
-            message="fix(api): resolve bug",
-            author_name="Test",
-            author_email="test@test.com",
-            date=now,
-        ),
-        Commit(
-            sha="ghi9012",
-            message="feat!: breaking change",
-            author_name="Test",
-            author_email="test@test.com",
-            date=now,
-        ),
-        Commit(
-            sha="jkl3456",
-            message="docs: update readme",
-            author_name="Test",
-            author_email="test@test.com",
-            date=now,
-        ),
-    ]
 
 
 class TestGenerateChangelog:
@@ -147,235 +110,143 @@ class TestGenerateChangelog:
             call_args = mock_run.call_args[0][0]
             assert "--unreleased" in call_args
 
-
-class TestGenerateFallbackChangelog:
-    """Tests for fallback changelog generation without git-cliff."""
-
-    def test_fallback_empty_commits(self, mock_repo: MagicMock):
-        """Return empty string when no commits."""
+    def test_generate_changelog_with_github_repo(self, mock_repo: MagicMock, tmp_path: Path):
+        """Pass --github-repo flag when github_repo is provided."""
         version = Version(1, 0, 0)
         config = ReleasePyConfig()
 
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = []
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="changelog with PRs", returncode=0)
 
-        assert result == ""
-
-    def test_fallback_with_features(self, mock_repo: MagicMock, sample_commits: list[Commit]):
-        """Generate changelog with features section."""
-        version = Version(1, 0, 0)
-        config = ReleasePyConfig()
-
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = sample_commits
-
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
-
-        assert "## [1.0.0]" in result
-        assert "### ✨ Features" in result
-        assert "add new feature" in result
-
-    def test_fallback_with_fixes(self, mock_repo: MagicMock, sample_commits: list[Commit]):
-        """Generate changelog with bug fixes section."""
-        version = Version(1, 0, 0)
-        config = ReleasePyConfig()
-
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = sample_commits
-
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
-
-        assert "### 🐛 Bug Fixes" in result
-        assert "**api:** resolve bug" in result
-
-    def test_fallback_with_breaking_changes(
-        self, mock_repo: MagicMock, sample_commits: list[Commit]
-    ):
-        """Generate changelog with breaking changes section."""
-        version = Version(1, 0, 0)
-        config = ReleasePyConfig()
-
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = sample_commits
-
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
-
-        assert "### ⚠️ Breaking Changes" in result
-        assert "breaking change" in result
-
-    def test_fallback_with_docs(self, mock_repo: MagicMock, sample_commits: list[Commit]):
-        """Generate changelog with documentation section."""
-        version = Version(1, 0, 0)
-        config = ReleasePyConfig()
-
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = sample_commits
-
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
-
-        assert "### 📚 Documentation" in result
-        assert "update readme" in result
-
-    def test_fallback_date_format(self, mock_repo: MagicMock):
-        """Changelog includes date in correct format."""
-        version = Version(1, 0, 0)
-        config = ReleasePyConfig()
-        now = datetime.now()
-
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = [
-            Commit(
-                sha="abc",
-                message="feat: test",
-                author_name="Test",
-                author_email="test@test.com",
-                date=now,
+            generate_changelog(
+                repo=mock_repo,
+                version=version,
+                config=config,
+                github_repo="owner/repo",
             )
-        ]
 
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
+            call_args = mock_run.call_args[0][0]
+            assert "--github-repo" in call_args
+            assert "owner/repo" in call_args
 
-        # Check date format is YYYY-MM-DD
-        import re
-
-        assert re.search(r"\d{4}-\d{2}-\d{2}", result)
-
-    def test_fallback_uses_tag_prefix(self, mock_repo: MagicMock):
-        """Use configured tag prefix for looking up latest tag."""
+    def test_generate_changelog_without_github_repo(self, mock_repo: MagicMock, tmp_path: Path):
+        """Omit --github-repo flag when github_repo is None."""
         version = Version(1, 0, 0)
         config = ReleasePyConfig()
 
-        mock_repo.get_latest_tag.return_value = "v0.9.0"
-        mock_repo.get_commits_since_tag.return_value = []
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(stdout="changelog", returncode=0)
 
-        mock_repo.get_latest_tag.assert_called_once_with("v*")
+            generate_changelog(
+                repo=mock_repo,
+                version=version,
+                config=config,
+                github_repo=None,
+            )
 
-    def test_fallback_all_commit_types(self, mock_repo: MagicMock):
-        """Handle all conventional commit types."""
-        version = Version(1, 0, 0)
+            call_args = mock_run.call_args[0][0]
+            assert "--github-repo" not in call_args
+
+
+class TestGetBumpFromGitCliff:
+    """Tests for get_bump_from_git_cliff."""
+
+    def test_bump_major(self, mock_repo: MagicMock, tmp_path: Path):
+        """Detect major bump from git-cliff output."""
         config = ReleasePyConfig()
-        now = datetime.now()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        all_types = [
-            Commit(
-                sha="1", message="feat: feature", author_name="T", author_email="t@t.com", date=now
-            ),
-            Commit(sha="2", message="fix: fix", author_name="T", author_email="t@t.com", date=now),
-            Commit(
-                sha="3",
-                message="perf: performance",
-                author_name="T",
-                author_email="t@t.com",
-                date=now,
-            ),
-            Commit(
-                sha="4",
-                message="docs: documentation",
-                author_name="T",
-                author_email="t@t.com",
-                date=now,
-            ),
-            Commit(
-                sha="5",
-                message="refactor: refactor",
-                author_name="T",
-                author_email="t@t.com",
-                date=now,
-            ),
-            Commit(
-                sha="6", message="test: test", author_name="T", author_email="t@t.com", date=now
-            ),
-            Commit(
-                sha="7", message="build: build", author_name="T", author_email="t@t.com", date=now
-            ),
-            Commit(sha="8", message="ci: ci", author_name="T", author_email="t@t.com", date=now),
-            Commit(
-                sha="9", message="style: style", author_name="T", author_email="t@t.com", date=now
-            ),
-            Commit(
-                sha="10", message="chore: chore", author_name="T", author_email="t@t.com", date=now
-            ),
-        ]
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="",
+                stderr="Bumping major version",
+                returncode=0,
+            )
 
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = all_types
+            result = get_bump_from_git_cliff(mock_repo, config)
+            assert result == BumpType.MAJOR
 
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
-
-        # Check all sections are present
-        assert "### ✨ Features" in result
-        assert "### 🐛 Bug Fixes" in result
-        assert "### ⚡ Performance" in result
-        assert "### 📚 Documentation" in result
-        assert "### ♻️ Refactoring" in result
-        assert "### 🧪 Tests" in result
-        assert "### 📦 Build" in result
-        assert "### 🔧 CI" in result
-        assert "### 💄 Style" in result
-        assert "### 🔨 Chores" in result
-
-    def test_fallback_breaking_not_duplicated(self, mock_repo: MagicMock):
-        """Breaking changes are not duplicated in their type section."""
-        version = Version(1, 0, 0)
+    def test_bump_minor(self, mock_repo: MagicMock, tmp_path: Path):
+        """Detect minor bump from git-cliff output."""
         config = ReleasePyConfig()
-        now = datetime.now()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        commits = [
-            Commit(
-                sha="abc",
-                message="feat!: breaking feature",
-                author_name="T",
-                author_email="t@t.com",
-                date=now,
-            ),
-        ]
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="Detected minor bump",
+                stderr="",
+                returncode=0,
+            )
 
-        mock_repo.get_latest_tag.return_value = None
-        mock_repo.get_commits_since_tag.return_value = commits
+            result = get_bump_from_git_cliff(mock_repo, config)
+            assert result == BumpType.MINOR
 
-        result = generate_fallback_changelog(
-            repo=mock_repo,
-            version=version,
-            config=config,
-        )
+    def test_bump_patch(self, mock_repo: MagicMock, tmp_path: Path):
+        """Detect patch bump from git-cliff output."""
+        config = ReleasePyConfig()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        # Should appear in breaking changes
-        assert "### ⚠️ Breaking Changes" in result
-        # Count occurrences - should only appear once
-        assert result.count("breaking feature") == 1
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="patch version",
+                stderr="",
+                returncode=0,
+            )
+
+            result = get_bump_from_git_cliff(mock_repo, config)
+            assert result == BumpType.PATCH
+
+    def test_bump_none_no_output(self, mock_repo: MagicMock, tmp_path: Path):
+        """Return NONE when no bump info in output."""
+        config = ReleasePyConfig()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                stdout="",
+                stderr="",
+                returncode=0,
+            )
+
+            result = get_bump_from_git_cliff(mock_repo, config)
+            assert result == BumpType.NONE
+
+    def test_bump_none_no_commits(self, mock_repo: MagicMock, tmp_path: Path):
+        """Return NONE when git-cliff reports no commits."""
+        config = ReleasePyConfig()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(
+                1, "git-cliff", stderr="no commits to process"
+            )
+
+            result = get_bump_from_git_cliff(mock_repo, config)
+            assert result == BumpType.NONE
+
+    def test_bump_git_cliff_error(self, mock_repo: MagicMock, tmp_path: Path):
+        """Raise GitCliffError on other git-cliff failures."""
+        config = ReleasePyConfig()
+        (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = subprocess.CalledProcessError(
+                1, "git-cliff", stderr="Invalid configuration"
+            )
+
+            with pytest.raises(GitCliffError):
+                get_bump_from_git_cliff(mock_repo, config)
+
+    def test_bump_git_cliff_not_found(self, mock_repo: MagicMock):
+        """Raise ChangelogError when git-cliff not found."""
+        config = ReleasePyConfig()
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.side_effect = FileNotFoundError("git-cliff not found")
+
+            with pytest.raises(ChangelogError, match="git-cliff not found"):
+                get_bump_from_git_cliff(mock_repo, config)

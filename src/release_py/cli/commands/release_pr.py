@@ -108,6 +108,19 @@ def run_release_pr(
     else:
         next_version = current_version.bump(bump_type)
 
+    # Apply pre-release identifier based on branch config
+    current_branch = repo.get_current_branch()
+    effective_prerelease = config.get_effective_prerelease(current_branch)
+
+    if effective_prerelease:
+        next_version = next_version.with_prerelease(effective_prerelease)
+        branch_config = config.get_branch_config(current_branch)
+        if branch_config and branch_config.prerelease:
+            console.print(
+                f"[dim]Auto-detected pre-release channel [cyan]{effective_prerelease}[/] "
+                f"from branch [cyan]{current_branch}[/][/]"
+            )
+
     # Try to get GitHub URL for generating links
     github_url: str | None = None
     try:
@@ -166,18 +179,79 @@ def run_release_pr(
 
         # Create release branch and make changes
         from release_py.core.changelog import generate_changelog
-        from release_py.project.pyproject import update_pyproject_version
+        from release_py.project.pyproject import (
+            detect_version_files,
+            update_pyproject_version,
+            update_version_file,
+            update_version_in_plain_file,
+        )
 
         # Checkout release branch
         repo.checkout(config.github.release_pr_branch, create=True)
         console.print(f"  [green]✓[/] Created branch {config.github.release_pr_branch}")
 
-        # Update version
+        # Track files to commit
+        files_to_commit: list[Path] = [project_path / "pyproject.toml"]
+
+        # Update version in pyproject.toml
         update_pyproject_version(project_path, str(next_version))
         console.print("  [green]✓[/] Updated pyproject.toml")
 
-        # Generate changelog
-        changelog_content = generate_changelog(repo=repo, version=next_version, config=config)
+        # Update additional version files (explicitly configured)
+        for version_file in config.version.version_files:
+            version_file_path = project_path / version_file
+            try:
+                if version_file_path.name == "VERSION":
+                    update_version_in_plain_file(version_file_path, str(next_version))
+                else:
+                    update_version_file(version_file_path, str(next_version))
+                console.print(f"  [green]✓[/] Updated version in {version_file}")
+                files_to_commit.append(version_file_path)
+            except Exception as e:
+                console.print(f"  [yellow]⚠[/] Could not update {version_file}: {e}")
+
+        # Auto-detect and update version files if enabled
+        if config.version.auto_detect_version_files:
+            detected_files = detect_version_files(project_path)
+            for version_file_path in detected_files:
+                relative_path = version_file_path.relative_to(project_path)
+                if relative_path in config.version.version_files:
+                    continue
+                try:
+                    if version_file_path.name == "VERSION":
+                        update_version_in_plain_file(version_file_path, str(next_version))
+                    else:
+                        update_version_file(version_file_path, str(next_version))
+                    console.print(f"  [green]✓[/] Updated {relative_path} (auto-detected)")
+                    files_to_commit.append(version_file_path)
+                except Exception as e:
+                    console.print(f"  [yellow]⚠[/] Could not update {relative_path}: {e}")
+
+        # Update lock file if enabled
+        if config.version.update_lock_file:
+            from release_py.project.lockfile import (
+                detect_package_manager,
+                get_lock_file_path,
+                should_update_lock_file,
+                update_lock_file,
+            )
+
+            if should_update_lock_file(project_path):
+                pkg_manager = detect_package_manager(project_path)
+                success, message = update_lock_file(project_path, pkg_manager)
+                if success:
+                    console.print(f"  [green]✓[/] {message}")
+                    lock_file = get_lock_file_path(project_path, pkg_manager)
+                    if lock_file and lock_file.exists():
+                        files_to_commit.append(lock_file)
+                else:
+                    console.print(f"  [yellow]⚠[/] {message}")
+
+        # Generate changelog with GitHub integration for PR links and @usernames
+        github_repo_str = f"{github_owner}/{github_repo}"
+        changelog_content = generate_changelog(
+            repo=repo, version=next_version, config=config, github_repo=github_repo_str
+        )
         changelog_path = project_path / config.effective_changelog_path
 
         if changelog_path.exists():
@@ -188,13 +262,10 @@ def run_release_pr(
 
         changelog_path.write_text(new_content)
         console.print(f"  [green]✓[/] Updated {config.effective_changelog_path}")
+        files_to_commit.append(changelog_path)
 
         # Commit changes
         commit_message = f"chore(release): prepare v{next_version}"
-        files_to_commit = [
-            project_path / "pyproject.toml",
-            changelog_path,
-        ]
         repo.commit(commit_message, files_to_commit)
         console.print("  [green]✓[/] Committed changes")
 

@@ -1,4 +1,4 @@
-name: 'release-py-action'
+name: 'py-release'
 description: 'Automated releases for Python projects - handles versioning, changelogs, and publishing'
 author: 'Mikko Leppanen'
 
@@ -15,7 +15,7 @@ inputs:
       - check: Preview what would happen (dry-run)
       - check-pr: Validate PR title follows conventional commits
       - update: Update version and changelog locally
-      - init: Initialize release-py configuration
+      - init: Initialize py-release configuration
     required: true
 
   github-token:
@@ -38,8 +38,8 @@ inputs:
     required: false
     default: '3.11'
 
-  release-py-version:
-    description: 'Version of release-py to install (default: latest). Use "source" to install from current repo.'
+  py-release-version:
+    description: 'Version of py-release to install (default: latest). Use "source" to install from current repo.'
     required: false
     default: ''
 
@@ -106,21 +106,21 @@ runs:
       with:
         enable-cache: true
 
-    - name: Install release-py
+    - name: Install py-release
       shell: bash
       run: |
-        if [[ "${{ inputs.release-py-version }}" == "source" ]]; then
-          echo "Installing release-py from source..."
-          uv tool install --from . release-py
-        elif [[ -n "${{ inputs.release-py-version }}" ]]; then
-          echo "Installing release-py==${{ inputs.release-py-version }}..."
-          uv tool install "release-py==${{ inputs.release-py-version }}"
+        if [[ "${{ inputs.py-release-version }}" == "source" ]]; then
+          echo "Installing py-release from source..."
+          uv tool install --from . py-release
+        elif [[ -n "${{ inputs.py-release-version }}" ]]; then
+          echo "Installing py-release==${{ inputs.py-release-version }}..."
+          uv tool install "py-release==${{ inputs.py-release-version }}"
         else
-          echo "Installing latest release-py..."
-          uv tool install release-py
+          echo "Installing latest py-release..."
+          uv tool install py-release
         fi
 
-    - name: Run release-py
+    - name: Run py-release
       id: release-py
       shell: bash
       working-directory: ${{ inputs.working-directory }}
@@ -136,7 +136,7 @@ runs:
         set -euo pipefail
 
         # Build command with options
-        CMD="release-py ${{ inputs.command }}"
+        CMD="py-release ${{ inputs.command }}"
 
         # Add --dry-run for commands that support it
         if [[ "${{ inputs.dry-run }}" == "true" ]]; then

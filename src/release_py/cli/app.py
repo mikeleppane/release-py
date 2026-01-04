@@ -1,4 +1,4 @@
-"""Main Typer application for release-py CLI."""
+"""Main Typer application for py-release CLI."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from release_py import __version__
 
 # Create the main Typer app
 app = typer.Typer(
-    name="release-py",
+    name="py-release",
     help="Best-in-class Python release automation, inspired by release-plz.",
     no_args_is_help=True,
     rich_markup_mode="rich",
@@ -26,7 +26,7 @@ err_console = Console(stderr=True)
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        console.print(f"[bold blue]release-py[/] version [green]{__version__}[/]")
+        console.print(f"[bold blue]py-release[/] version [green]{__version__}[/]")
         raise typer.Exit
 
 
@@ -43,7 +43,7 @@ def main(
         ),
     ] = None,
 ) -> None:
-    """release-py: Automated releases for Python projects.
+    """py-release: Automated releases for Python projects.
 
     [bold]Commands:[/]
 
@@ -52,12 +52,12 @@ def main(
     • [cyan]update[/]     Update version and changelog locally
     • [cyan]release-pr[/] Create or update a release pull request
     • [cyan]release[/]    Tag, publish to PyPI, and create GitHub release
-    • [cyan]init[/]       Initialize release-py configuration
+    • [cyan]init[/]       Initialize py-release configuration
 
     [bold]Quick Start:[/]
 
     1. Add conventional commits to your repository
-    2. Run [cyan]release-py release-pr[/] to create a release PR
+    2. Run [cyan]py-release release-pr[/] to create a release PR
     3. Merge the PR to trigger the release
 
     [bold]Documentation:[/] https://github.com/mikeleppane/release-py
@@ -92,8 +92,8 @@ def check(
 
     [bold]Example:[/]
 
-        $ release-py check
-        $ release-py check --verbose
+        $ py-release check
+        $ py-release check --verbose
     """
     from release_py.cli.commands.check import run_check
 
@@ -158,10 +158,10 @@ def update(
 
     [bold]Example:[/]
 
-        $ release-py update                    # Preview changes
-        $ release-py update --execute          # Apply changes
-        $ release-py update --version 2.0.0    # Force version
-        $ release-py update --prerelease alpha # Create alpha release
+        $ py-release update                    # Preview changes
+        $ py-release update --execute          # Apply changes
+        $ py-release update --version 2.0.0    # Force version
+        $ py-release update --prerelease alpha # Create alpha release
     """
     from release_py.cli.commands.update import run_update
 
@@ -201,12 +201,12 @@ def release_pr(
     3. Creates a branch with version bump and changelog
     4. Creates or updates a pull request
 
-    When the PR is merged, use [cyan]release-py release[/] to publish.
+    When the PR is merged, use [cyan]py-release release[/] to publish.
 
     [bold]Example:[/]
 
-        $ release-py release-pr
-        $ release-py release-pr --dry-run
+        $ py-release release-pr
+        $ py-release release-pr --dry-run
     """
     from release_py.cli.commands.release_pr import run_release_pr
 
@@ -259,9 +259,9 @@ def release(
 
     [bold]Example:[/]
 
-        $ release-py release
-        $ release-py release --dry-run
-        $ release-py release --skip-publish
+        $ py-release release
+        $ py-release release --dry-run
+        $ py-release release --skip-publish
     """
     from release_py.cli.commands.release import run_release
 
@@ -291,18 +291,18 @@ def init_config(
         ),
     ] = False,
 ) -> None:
-    """Initialize release-py configuration.
+    """Initialize py-release configuration.
 
     This command:
 
-    1. Adds [tool.release-py] section to pyproject.toml
+    1. Adds [tool.py-release] section to pyproject.toml
     2. Creates a git-cliff configuration
     3. Optionally creates GitHub Actions workflow
 
     [bold]Example:[/]
 
-        $ release-py init
-        $ release-py init --force  # Overwrite existing config
+        $ py-release init
+        $ py-release init --force  # Overwrite existing config
     """
     from release_py.cli.commands.init_cmd import run_init
 
@@ -359,8 +359,8 @@ def check_pr(
 
     [bold]Usage:[/]
 
-        $ release-py check-pr --title "feat: add feature"
-        $ release-py check-pr  # Auto-detect in GitHub Actions
+        $ py-release check-pr --title "feat: add feature"
+        $ py-release check-pr  # Auto-detect in GitHub Actions
     """
     from release_py.cli.commands.check_pr import run_check_pr
 

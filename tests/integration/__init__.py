@@ -1,1 +1,1 @@
-"""Integration tests for release-py."""
+"""Integration tests for py-release."""

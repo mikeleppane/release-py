@@ -12,7 +12,6 @@ from release_py.config.models import CommitsConfig, ReleasePyConfig
 from release_py.vcs.git import Commit
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
     from pathlib import Path
 
 
@@ -110,7 +109,7 @@ def breaking_commit() -> Commit:
 
 @pytest.fixture
 def default_config() -> ReleasePyConfig:
-    """Default release-py configuration."""
+    """Default py-release configuration."""
     return ReleasePyConfig()
 
 
@@ -126,10 +125,10 @@ def default_commits_config() -> CommitsConfig:
 
 
 @pytest.fixture
-def temp_git_repo(tmp_path: Path) -> Generator[Path, None, None]:
+def temp_git_repo(tmp_path: Path) -> Path:
     """Create a temporary git repository for testing.
 
-    Yields the path to the repository root.
+    Returns the path to the repository root.
     """
     repo_path = tmp_path / "test_repo"
     repo_path.mkdir()
@@ -179,7 +178,7 @@ requires-python = ">=3.11"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.release-py]
+[tool.py-release]
 default_branch = "main"
 tag_prefix = "v"
 """

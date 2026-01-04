@@ -125,10 +125,19 @@ def run_release(
 
         # Step 2: Build package (unless skipping publish)
         if not skip_publish and config.publish.enabled:
-            console.print("  • Building package...")
+            custom_build = config.hooks.build
+            if custom_build:
+                console.print(f"  • Building package (custom: [dim]{custom_build}[/])...")
+            else:
+                console.print("  • Building package...")
+
             from release_py.publish.pypi import build_package
 
-            build_package(project_path)
+            build_package(
+                project_path,
+                custom_command=custom_build,
+                version=str(current_version),
+            )
             console.print("  [green]✓[/] Built package")
 
             # Step 3: Publish to PyPI
@@ -178,18 +187,18 @@ def run_release(
             except Exception as e:
                 console.print(f"  [yellow]⚠[/] Could not fetch PRs: {e}")
         else:
-            # Commit-based changelog (default)
+            # Commit-based changelog via git-cliff (default)
             try:
-                from release_py.core.changelog import (
-                    generate_changelog,
-                    generate_fallback_changelog,
-                )
+                from release_py.core.changelog import generate_changelog
 
-                try:
-                    changelog_content = generate_changelog(repo, current_version, config)
-                except Exception:
-                    # Fallback if git-cliff not available
-                    changelog_content = generate_fallback_changelog(repo, current_version, config)
+                # Pass GitHub repo for richer changelog with PR links and @usernames
+                github_repo_str = f"{github_owner}/{github_repo}"
+                changelog_content = generate_changelog(
+                    repo,
+                    current_version,
+                    config,
+                    github_repo=github_repo_str,
+                )
             except Exception:
                 pass  # No changelog content available
 

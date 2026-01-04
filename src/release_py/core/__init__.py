@@ -9,7 +9,7 @@ This module contains the fundamental building blocks:
 
 from __future__ import annotations
 
-from release_py.core.changelog import generate_changelog, generate_fallback_changelog
+from release_py.core.changelog import generate_changelog, get_bump_from_git_cliff
 from release_py.core.commits import (
     ParsedCommit,
     calculate_bump,
@@ -31,8 +31,8 @@ __all__ = [
     "format_commit_for_changelog",
     # Changelog
     "generate_changelog",
-    "generate_fallback_changelog",
     "get_breaking_changes",
+    "get_bump_from_git_cliff",
     "group_commits_by_type",
     "parse_commits",
     "parse_version",

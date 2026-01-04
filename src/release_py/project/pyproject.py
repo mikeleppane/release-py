@@ -1,10 +1,17 @@
 """pyproject.toml version manipulation.
 
 This module provides functionality for reading and updating
-the version number in pyproject.toml files.
+the version number in pyproject.toml files and other version files.
 
 It preserves formatting and comments by using regex-based
 replacement rather than full TOML parsing and rewriting.
+
+Supported version file patterns:
+- pyproject.toml (PEP 621 and Poetry formats)
+- __init__.py with __version__ = "..."
+- __version__.py with __version__ = "..."
+- _version.py with __version__ = "..."
+- VERSION (plain text file)
 """
 
 from __future__ import annotations
@@ -17,6 +24,22 @@ from release_py.exceptions import ProjectError, VersionNotFoundError
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+# Common version file patterns to search for
+VERSION_FILE_PATTERNS = [
+    "__version__.py",
+    "_version.py",
+    "__init__.py",
+    "version.py",
+]
+
+# Regex patterns to detect version in Python files
+VERSION_PATTERNS = [
+    r'^__version__\s*=\s*["\']([^"\']+)["\']',
+    r'^VERSION\s*=\s*["\']([^"\']+)["\']',
+    r'^version\s*=\s*["\']([^"\']+)["\']',
+]
 
 
 def get_pyproject_version(path: Path | None = None) -> str:
@@ -242,3 +265,100 @@ def update_version_file(
         raise VersionNotFoundError(f"Could not find version pattern in {file_path}")
 
     file_path.write_text(new_content)
+
+
+def _file_contains_version(file_path: Path) -> bool:
+    """Check if a file contains a version pattern.
+
+    Args:
+        file_path: Path to the file to check
+
+    Returns:
+        True if file contains a recognizable version pattern
+    """
+    try:
+        content = file_path.read_text()
+        return any(re.search(pat, content, re.MULTILINE) for pat in VERSION_PATTERNS)
+    except OSError:
+        return False
+
+
+def detect_version_files(project_path: Path) -> list[Path]:
+    """Auto-detect files that contain version strings.
+
+    Searches for common version file patterns in the project directory,
+    checking both src/ layout and flat layout structures.
+
+    Args:
+        project_path: Path to the project root
+
+    Returns:
+        List of paths to files containing version patterns
+
+    Example:
+        >>> files = detect_version_files(Path("/path/to/project"))
+        >>> for f in files:
+        ...     print(f)
+        /path/to/project/src/mypackage/__init__.py
+        /path/to/project/src/mypackage/__version__.py
+    """
+    from pathlib import Path as PathClass
+
+    found: list[Path] = []
+    project_path = PathClass(project_path)
+
+    # Directories to search for version files
+    search_dirs: list[Path] = []
+
+    # Directories to skip when looking for packages
+    skip_dirs = {"tests", "test", "docs", "doc", "examples", "scripts", "dist", "build"}
+
+    # Check src/ layout (PEP 517/518 recommended)
+    src_dir = project_path / "src"
+    if src_dir.exists() and src_dir.is_dir():
+        search_dirs.extend(
+            pkg_dir
+            for pkg_dir in src_dir.iterdir()
+            if pkg_dir.is_dir() and not pkg_dir.name.startswith((".", "_"))
+        )
+
+    # Check flat layout (package directly in project root)
+    for item in project_path.iterdir():
+        if item.is_dir() and not item.name.startswith((".", "_")):
+            # Skip common non-package directories
+            if item.name in skip_dirs:
+                continue
+            # Check if it looks like a Python package
+            if (item / "__init__.py").exists():
+                search_dirs.append(item)
+
+    # Search for version files in each package directory
+    for pkg_dir in search_dirs:
+        for pattern in VERSION_FILE_PATTERNS:
+            file_path = pkg_dir / pattern
+            if file_path.exists() and file_path.is_file() and _file_contains_version(file_path):
+                found.append(file_path)
+
+    # Also check for VERSION file in project root (plain text)
+    version_file = project_path / "VERSION"
+    if version_file.exists() and version_file.is_file():
+        found.append(version_file)
+
+    return found
+
+
+def update_version_in_plain_file(file_path: Path, new_version: str) -> None:
+    """Update version in a plain text VERSION file.
+
+    Args:
+        file_path: Path to the VERSION file
+        new_version: New version string
+
+    Raises:
+        ProjectError: If file doesn't exist
+    """
+    if not file_path.is_file():
+        raise ProjectError(f"Version file not found: {file_path}")
+
+    # Plain VERSION files just contain the version string
+    file_path.write_text(f"{new_version}\n")

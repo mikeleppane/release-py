@@ -1,15 +1,46 @@
-"""Pydantic models for release-py configuration.
+"""Pydantic models for py-release configuration.
 
-Configuration is read from pyproject.toml under [tool.release-py].
+Configuration is read from pyproject.toml under [tool.py-release].
 All fields have sensible defaults for zero-config usage.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
+
+
+class BranchConfig(BaseModel):
+    """Configuration for a release branch channel.
+
+    Allows different branches to produce different types of releases
+    (e.g., alpha, beta, stable).
+    """
+
+    match: str = Field(
+        description="Branch name or pattern to match (e.g., 'main', 'beta', 'release/*')",
+    )
+    prerelease: bool = Field(
+        default=False,
+        description="Whether releases from this branch are pre-releases",
+    )
+    prerelease_token: str | None = Field(
+        default=None,
+        description="Pre-release token to use (e.g., 'alpha', 'beta', 'rc')",
+    )
+
+    model_config = {"extra": "forbid"}
+
+    def matches_branch(self, branch_name: str) -> bool:
+        """Check if this config matches the given branch name.
+
+        Supports exact matches and glob-style patterns with '*'.
+        """
+        pattern = self.match.replace("*", ".*")
+        return bool(re.fullmatch(pattern, branch_name))
 
 
 class CommitsConfig(BaseModel):
@@ -89,6 +120,39 @@ class ChangelogConfig(BaseModel):
         ],
         description="Authors to exclude from changelog (bots)",
     )
+    # Custom template settings for fallback changelog (when git-cliff is not available)
+    section_headers: dict[str, str] = Field(
+        default_factory=lambda: {
+            "breaking": "⚠️ Breaking Changes",
+            "feat": "✨ Features",
+            "fix": "🐛 Bug Fixes",
+            "perf": "⚡ Performance",
+            "docs": "📚 Documentation",
+            "refactor": "♻️ Refactoring",
+            "test": "🧪 Tests",
+            "build": "📦 Build",
+            "ci": "🔧 CI",
+            "style": "💄 Style",
+            "chore": "🔨 Chores",
+            "other": "📝 Other",
+        },
+        description="Custom section headers for each commit type (supports emojis)",
+    )
+    show_authors: bool = Field(
+        default=False,
+        description="Include author names in changelog entries",
+    )
+    show_commit_hash: bool = Field(
+        default=False,
+        description="Include short commit hash in changelog entries",
+    )
+    commit_template: str | None = Field(
+        default=None,
+        description=(
+            "Custom template for each commit entry. "
+            "Available variables: {scope}, {description}, {author}, {hash}, {body}"
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -112,6 +176,20 @@ class VersionConfig(BaseModel):
         default_factory=list,
         description="Additional files containing version to update",
     )
+    auto_detect_version_files: bool = Field(
+        default=False,
+        description=(
+            "Automatically detect and update version files "
+            "(e.g., __init__.py, __version__.py) in addition to pyproject.toml"
+        ),
+    )
+    update_lock_file: bool = Field(
+        default=True,
+        description=(
+            "Automatically update lock file (uv.lock, poetry.lock, pdm.lock) "
+            "after version bump to keep it in sync"
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -132,7 +210,7 @@ class GitHubConfig(BaseModel):
         description="GitHub API URL (for GitHub Enterprise, e.g., https://github.mycompany.com/api/v3)",
     )
     release_pr_branch: str = Field(
-        default="release-py/release",
+        default="py-release/release",
         description="Branch name for release PRs",
     )
     release_pr_labels: list[str] = Field(
@@ -208,14 +286,22 @@ class HooksConfig(BaseModel):
         default_factory=list,
         description="Commands to run after release (e.g., ['./scripts/notify.sh'])",
     )
+    build: str | None = Field(
+        default=None,
+        description=(
+            "Custom build command to use instead of the default 'uv build'. "
+            "Set to build the package before publishing. "
+            "Available variables: {version}, {project_path}"
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
 
 class ReleasePyConfig(BaseModel):
-    """Main configuration for release-py.
+    """Main configuration for py-release.
 
-    Read from pyproject.toml under [tool.release-py].
+    Read from pyproject.toml under [tool.py-release].
     All fields have sensible defaults for zero-config usage.
     """
 
@@ -245,6 +331,13 @@ class ReleasePyConfig(BaseModel):
     publish: PublishConfig = Field(default_factory=PublishConfig)
     packages: PackagesConfig = Field(default_factory=PackagesConfig)
     hooks: HooksConfig = Field(default_factory=HooksConfig)
+    branches: dict[str, BranchConfig] = Field(
+        default_factory=dict,
+        description=(
+            "Branch-specific release configurations for multi-channel releases. "
+            "Keys are channel names (e.g., 'main', 'beta', 'alpha')."
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -268,3 +361,36 @@ class ReleasePyConfig(BaseModel):
     def is_monorepo(self) -> bool:
         """Check if this is a monorepo configuration."""
         return len(self.packages.paths) > 0
+
+    def get_branch_config(self, branch_name: str) -> BranchConfig | None:
+        """Get the branch configuration for the given branch.
+
+        Searches through configured branches and returns the first match.
+        Returns None if no matching branch config is found.
+
+        Args:
+            branch_name: The current git branch name
+
+        Returns:
+            BranchConfig if a match is found, None otherwise
+        """
+        for config in self.branches.values():
+            if config.matches_branch(branch_name):
+                return config
+        return None
+
+    def get_effective_prerelease(self, branch_name: str) -> str | None:
+        """Get the effective pre-release token for the given branch.
+
+        Checks branch-specific config first, then falls back to version.pre_release.
+
+        Args:
+            branch_name: The current git branch name
+
+        Returns:
+            Pre-release token (e.g., 'alpha', 'beta') or None for stable releases
+        """
+        branch_config = self.get_branch_config(branch_name)
+        if branch_config and branch_config.prerelease:
+            return branch_config.prerelease_token
+        return self.version.pre_release
