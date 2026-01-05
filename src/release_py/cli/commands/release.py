@@ -80,7 +80,7 @@ def run_release(
         raise SystemExit(1) from e
 
     # Create tag name
-    tag_name = current_version.with_tag_prefix(config.effective_tag_prefix)
+    tag_name = current_version.with_tag_prefix(config.version.tag_prefix)
 
     # Check if tag already exists
     if repo.tag_exists(tag_name):
@@ -109,7 +109,7 @@ def run_release(
             console.print("  2. Build package with uv")
             console.print("  3. Publish to PyPI")
         console.print(f"  4. Create GitHub release for [cyan]{tag_name}[/]")
-        console.print("\n[dim]Run without [cyan]--dry-run[/] to perform the release.[/]")
+        console.print("\n[dim]Run with [cyan]--execute[/] to perform the release.[/]")
         return
 
     # Actually perform the release
@@ -158,7 +158,7 @@ def run_release(
         github = GitHubClient(owner=github_owner, repo=github_repo)
 
         # Get the previous tag to determine changelog range
-        tag_pattern = f"{config.effective_tag_prefix}*"
+        tag_pattern = f"{config.version.tag_prefix}*"
         previous_tag = repo.get_latest_tag(tag_pattern)
 
         # Generate changelog content and get contributors
@@ -199,8 +199,11 @@ def run_release(
                     config,
                     github_repo=github_repo_str,
                 )
-            except Exception:
-                pass  # No changelog content available
+            except Exception as e:
+                console.print(
+                    f"  [yellow]⚠[/] Could not generate changelog: {e}\n"
+                    "    GitHub release will be created without changelog content."
+                )
 
             # Get contributors from commits
             contributors = repo.get_contributors_since_tag(previous_tag)

@@ -515,7 +515,7 @@ def generate_cliff_config(
     lines.append("filter_commits = true")
 
     # Tag pattern
-    tag_prefix = config.effective_tag_prefix
+    tag_prefix = config.version.tag_prefix
     if tag_prefix:
         lines.append(f'tag_pattern = "{tag_prefix}[0-9]*"')
 

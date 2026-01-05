@@ -43,7 +43,7 @@ class TestReleaseDryRun:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release", str(release_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release", str(release_ready_repo)])
 
         # Should show preview without actually releasing
         assert result.exit_code == 0
@@ -59,7 +59,7 @@ class TestReleaseDryRun:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release", str(release_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release", str(release_ready_repo)])
 
         # In dry run, we shouldn't push - no tag should be created
         assert result.exit_code == 0
@@ -90,7 +90,9 @@ class TestReleaseExecution:
 
                 with patch("release_py.publish.pypi.publish_package"):
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
-                        result = runner.invoke(app, ["release", str(release_ready_repo)])
+                        result = runner.invoke(
+                            app, ["release", str(release_ready_repo), "--execute"]
+                        )
 
                         # Check if tag was mentioned or release succeeded
                         assert result.exit_code in (0, 1)
@@ -113,7 +115,8 @@ class TestReleaseExecution:
                 with patch("release_py.publish.pypi.publish_package") as mock_publish:
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
                         result = runner.invoke(
-                            app, ["release", str(release_ready_repo), "--skip-publish"]
+                            app,
+                            ["release", str(release_ready_repo), "--execute", "--skip-publish"],
                         )
 
                         # With skip-publish, publish should not be called
@@ -135,7 +138,7 @@ class TestReleaseErrors:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release", str(release_ready_repo)])
+        result = runner.invoke(app, ["release", str(release_ready_repo), "--execute"])
 
         # Should warn or fail about wrong branch
         assert result.exit_code in (0, 1)
@@ -145,14 +148,14 @@ class TestReleaseErrors:
         # Make repo dirty
         (release_ready_repo / "uncommitted.txt").write_text("dirty")
 
-        result = runner.invoke(app, ["release", str(release_ready_repo)])
+        result = runner.invoke(app, ["release", str(release_ready_repo), "--execute"])
 
         # Should fail due to dirty repo
         assert result.exit_code == 1
 
     def test_release_no_remote(self, temp_git_repo_with_pyproject: Path):
         """Handle missing remote gracefully."""
-        result = runner.invoke(app, ["release", str(temp_git_repo_with_pyproject)])
+        result = runner.invoke(app, ["release", str(temp_git_repo_with_pyproject), "--execute"])
 
         # Should fail or warn about missing remote
         assert result.exit_code == 1
@@ -167,7 +170,7 @@ class TestReleaseErrors:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release", str(release_ready_repo)])
+        result = runner.invoke(app, ["release", str(release_ready_repo), "--execute"])
 
         # Should handle existing tag
         assert result.exit_code in (0, 1)
@@ -192,7 +195,9 @@ class TestReleaseGitHubIntegration:
             with patch("release_py.publish.pypi.build_package", return_value=[]):
                 with patch("release_py.publish.pypi.publish_package"):
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
-                        result = runner.invoke(app, ["release", str(release_ready_repo)])
+                        result = runner.invoke(
+                            app, ["release", str(release_ready_repo), "--execute"]
+                        )
 
                         # Verify create_release was called
                         if result.exit_code == 0:
@@ -213,7 +218,9 @@ class TestReleaseGitHubIntegration:
             with patch("release_py.publish.pypi.build_package", return_value=[]):
                 with patch("release_py.publish.pypi.publish_package"):
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
-                        result = runner.invoke(app, ["release", str(release_ready_repo)])
+                        result = runner.invoke(
+                            app, ["release", str(release_ready_repo), "--execute"]
+                        )
 
                         if result.exit_code == 0:
                             # Check that create_release was called
@@ -243,7 +250,9 @@ class TestReleasePublishing:
 
                 with patch("release_py.publish.pypi.publish_package"):
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
-                        result = runner.invoke(app, ["release", str(release_ready_repo)])
+                        result = runner.invoke(
+                            app, ["release", str(release_ready_repo), "--execute"]
+                        )
 
                         if result.exit_code == 0:
                             mock_build.assert_called_once()
@@ -262,7 +271,9 @@ class TestReleasePublishing:
             with patch("release_py.publish.pypi.build_package", return_value=dist_files):
                 with patch("release_py.publish.pypi.publish_package") as mock_publish:
                     with patch("release_py.vcs.git.GitRepository.push_tag"):
-                        result = runner.invoke(app, ["release", str(release_ready_repo)])
+                        result = runner.invoke(
+                            app, ["release", str(release_ready_repo), "--execute"]
+                        )
 
                         if result.exit_code == 0:
                             mock_publish.assert_called_once()

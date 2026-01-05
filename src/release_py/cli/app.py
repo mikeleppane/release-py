@@ -52,6 +52,7 @@ def main(
     • [cyan]update[/]     Update version and changelog locally
     • [cyan]release-pr[/] Create or update a release pull request
     • [cyan]release[/]    Tag, publish to PyPI, and create GitHub release
+    • [cyan]do-release[/] Complete release: update + commit + tag + publish
     • [cyan]init[/]       Initialize releasio configuration
 
     [bold]Quick Start:[/]
@@ -183,16 +184,19 @@ def release_pr(
             help="Path to the project directory.",
         ),
     ] = None,
-    dry_run: Annotated[
+    execute: Annotated[
         bool,
         typer.Option(
-            "--dry-run",
-            "-n",
-            help="Preview without creating/updating the PR.",
+            "--execute",
+            "-x",
+            help="Actually create/update the PR (default is dry-run).",
         ),
     ] = False,
 ) -> None:
     """Create or update a release pull request.
+
+    By default, this runs in dry-run mode showing what would be created.
+    Use [cyan]--execute[/] to actually create the PR.
 
     This command:
 
@@ -205,14 +209,14 @@ def release_pr(
 
     [bold]Example:[/]
 
-        $ releasio release-pr
-        $ releasio release-pr --dry-run
+        $ releasio release-pr              # Preview (safe)
+        $ releasio release-pr --execute    # Create the PR
     """
     from release_py.cli.commands.release_pr import run_release_pr
 
     run_release_pr(
         path=path,
-        dry_run=dry_run,
+        dry_run=not execute,
         console=console,
         err_console=err_console,
     )
@@ -226,12 +230,12 @@ def release(
             help="Path to the project directory.",
         ),
     ] = None,
-    dry_run: Annotated[
+    execute: Annotated[
         bool,
         typer.Option(
-            "--dry-run",
-            "-n",
-            help="Preview without releasing.",
+            "--execute",
+            "-x",
+            help="Actually perform the release (default is dry-run).",
         ),
     ] = False,
     skip_publish: Annotated[
@@ -243,6 +247,9 @@ def release(
     ] = False,
 ) -> None:
     """Perform the release: tag, publish, and create GitHub release.
+
+    By default, this runs in dry-run mode showing what would happen.
+    Use [cyan]--execute[/] to perform the actual release.
 
     This command:
 
@@ -259,16 +266,95 @@ def release(
 
     [bold]Example:[/]
 
-        $ releasio release
-        $ releasio release --dry-run
-        $ releasio release --skip-publish
+        $ releasio release              # Preview (safe)
+        $ releasio release --execute    # Perform the release
+        $ releasio release --execute --skip-publish
     """
     from release_py.cli.commands.release import run_release
 
     run_release(
         path=path,
-        dry_run=dry_run,
+        dry_run=not execute,
         skip_publish=skip_publish,
+        console=console,
+        err_console=err_console,
+    )
+
+
+@app.command("do-release")
+def do_release(
+    path: Annotated[
+        str | None,
+        typer.Argument(
+            help="Path to the project directory.",
+        ),
+    ] = None,
+    execute: Annotated[
+        bool,
+        typer.Option(
+            "--execute",
+            "-x",
+            help="Actually perform the release (default is dry-run).",
+        ),
+    ] = False,
+    skip_publish: Annotated[
+        bool,
+        typer.Option(
+            "--skip-publish",
+            help="Skip publishing to PyPI.",
+        ),
+    ] = False,
+    version_override: Annotated[
+        str | None,
+        typer.Option(
+            "--version",
+            "-v",
+            help="Override calculated version (e.g., '2.0.0').",
+        ),
+    ] = None,
+    prerelease: Annotated[
+        str | None,
+        typer.Option(
+            "--prerelease",
+            "--pre",
+            help="Create a pre-release version (e.g., 'alpha', 'beta', 'rc').",
+        ),
+    ] = None,
+) -> None:
+    """Complete release workflow: update + commit + tag + publish.
+
+    By default, this runs in dry-run mode showing what would happen.
+    Use [cyan]--execute[/] to perform the actual release.
+
+    This is the recommended way to release - it combines all steps:
+
+    1. Updates version in pyproject.toml and version files
+    2. Generates/updates changelog
+    3. Commits the changes automatically
+    4. Creates and pushes a git tag
+    5. Builds and publishes to PyPI
+    6. Creates a GitHub release
+
+    [bold]Prerequisites:[/]
+
+    • Repository must be clean (no uncommitted changes)
+    • Must be on the default branch
+
+    [bold]Example:[/]
+
+        $ releasio do-release              # Preview (safe)
+        $ releasio do-release --execute    # Full release
+        $ releasio do-release --execute --skip-publish
+        $ releasio do-release --execute --version 2.0.0
+    """
+    from release_py.cli.commands.do_release import run_do_release
+
+    run_do_release(
+        path=path,
+        execute=execute,
+        skip_publish=skip_publish,
+        version_override=version_override,
+        prerelease=prerelease,
         console=console,
         err_console=err_console,
     )

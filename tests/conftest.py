@@ -180,6 +180,8 @@ build-backend = "hatchling.build"
 
 [tool.releasio]
 default_branch = "main"
+
+[tool.releasio.version]
 tag_prefix = "v"
 """
     )

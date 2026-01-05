@@ -38,8 +38,6 @@ class TestReleasePyConfig:
 
         assert config.default_branch == "main"
         assert config.allow_dirty is False
-        assert config.tag_prefix == "v"
-        assert config.changelog_path == Path("CHANGELOG.md")
 
     def test_nested_defaults(self):
         """Nested configurations have defaults."""
@@ -51,14 +49,6 @@ class TestReleasePyConfig:
         assert config.version.initial_version == "0.1.0"
         assert config.github.release_pr_branch == "releasio/release"
         assert config.publish.tool == "uv"
-
-    def test_effective_tag_prefix(self):
-        """effective_tag_prefix returns correct value."""
-        config = ReleasePyConfig()
-        assert config.effective_tag_prefix == "v"
-
-        config = ReleasePyConfig(version=VersionConfig(tag_prefix="release-"))
-        assert config.effective_tag_prefix == "release-"
 
     def test_is_monorepo(self):
         """is_monorepo detects monorepo configuration."""

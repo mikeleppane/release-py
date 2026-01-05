@@ -164,8 +164,12 @@ use_github_prs = true
     config_toml = f"""
 [tool.releasio]
 default_branch = "{default_branch}"
+
+[tool.releasio.version]
 tag_prefix = "{tag_prefix}"
-changelog_path = "CHANGELOG.md"
+
+[tool.releasio.changelog]
+path = "CHANGELOG.md"
 
 [tool.releasio.commits]
 # Commit types that trigger a minor version bump

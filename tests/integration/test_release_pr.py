@@ -52,7 +52,7 @@ class TestReleasePrDryRun:
 
     def test_release_pr_dry_run_shows_preview(self, pr_ready_repo: Path):
         """Dry run shows PR preview."""
-        result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
 
         assert result.exit_code == 0
         assert "Dry Run" in result.stdout or "Preview" in result.stdout
@@ -60,7 +60,7 @@ class TestReleasePrDryRun:
 
     def test_release_pr_dry_run_shows_version(self, pr_ready_repo: Path):
         """Dry run shows version information."""
-        result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
 
         assert result.exit_code == 0
         # Should show current and next version
@@ -68,7 +68,7 @@ class TestReleasePrDryRun:
 
     def test_release_pr_dry_run_shows_branch(self, pr_ready_repo: Path):
         """Dry run shows branch information."""
-        result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
 
         assert result.exit_code == 0
         assert "Branch" in result.stdout or "release" in result.stdout.lower()
@@ -93,7 +93,7 @@ class TestReleasePrDryRun:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release-pr", str(repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(repo)])
 
         # Should indicate no changes
         assert "No commits" in result.stdout or "No Changes" in result.stdout
@@ -126,7 +126,7 @@ class TestReleasePrExecution:
 
                 # Mock git push to avoid actual network call
                 with patch("release_py.vcs.git.GitRepository.push"):
-                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
+                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--execute"])
 
                     # Check branch was created
                     subprocess.run(
@@ -163,7 +163,7 @@ class TestReleasePrExecution:
                 mock_cl.return_value = "## [1.1.0]\n\n- Feature"
 
                 with patch("release_py.vcs.git.GitRepository.push"):
-                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
+                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--execute"])
 
                     if result.exit_code == 0:
                         # Check pyproject was updated
@@ -195,7 +195,7 @@ class TestReleasePrExecution:
                 mock_cl.return_value = "## [1.1.0]\n\n- Feature"
 
                 with patch("release_py.vcs.git.GitRepository.push"):
-                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
+                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--execute"])
 
                     if result.exit_code == 0:
                         mock_client.create_pull_request.assert_called_once()
@@ -240,7 +240,7 @@ class TestReleasePrUpdate:
                 mock_cl.return_value = "## [1.1.0]\n\n- Feature"
 
                 with patch("release_py.vcs.git.GitRepository.push"):
-                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
+                    result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--execute"])
 
                     if result.exit_code == 0:
                         mock_client.update_pull_request.assert_called_once()
@@ -265,7 +265,7 @@ class TestReleasePrErrors:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release-pr", str(repo)])
+        result = runner.invoke(app, ["release-pr", str(repo), "--execute"])
 
         assert result.exit_code == 1
 
@@ -291,7 +291,7 @@ class TestReleasePrErrors:
             capture_output=True,
         )
 
-        result = runner.invoke(app, ["release-pr", str(repo)])
+        result = runner.invoke(app, ["release-pr", str(repo), "--execute"])
 
         # Should fail because GitLab not supported
         assert result.exit_code == 1
@@ -302,7 +302,7 @@ class TestReleasePrBody:
 
     def test_pr_body_contains_version(self, pr_ready_repo: Path):
         """PR body contains version information."""
-        result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
 
         assert result.exit_code == 0
         # PR body should mention versions
@@ -310,7 +310,7 @@ class TestReleasePrBody:
 
     def test_pr_body_contains_changelog(self, pr_ready_repo: Path):
         """PR body contains changelog preview."""
-        result = runner.invoke(app, ["release-pr", str(pr_ready_repo), "--dry-run"])
+        result = runner.invoke(app, ["release-pr", str(pr_ready_repo)])
 
         assert result.exit_code == 0
         # Should show some changelog content

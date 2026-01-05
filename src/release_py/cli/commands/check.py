@@ -62,7 +62,7 @@ def run_check(
         raise SystemExit(1) from e
 
     # Get latest tag
-    tag_pattern = f"{config.effective_tag_prefix}*"
+    tag_pattern = f"{config.version.tag_prefix}*"
     latest_tag = repo.get_latest_tag(tag_pattern)
 
     # Detect first release (no existing tags)
@@ -171,7 +171,7 @@ def run_check(
     console.print()
     console.print("[bold]Files that would be modified:[/]")
     console.print(f"  • [cyan]pyproject.toml[/] (version: {current_version} → {next_version})")
-    console.print(f"  • [cyan]{config.effective_changelog_path}[/] (changelog entry)")
+    console.print(f"  • [cyan]{config.changelog.path}[/] (changelog entry)")
 
     if config.version.version_files:
         for vf in config.version.version_files:

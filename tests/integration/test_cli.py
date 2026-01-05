@@ -66,7 +66,7 @@ class TestCLIHelp:
         """release-pr --help shows options."""
         result = runner.invoke(app, ["release-pr", "--help"])
         assert result.exit_code == 0
-        assert "--dry-run" in strip_ansi(result.stdout)
+        assert "--execute" in strip_ansi(result.stdout)
 
     def test_release_help(self):
         """release --help shows options."""

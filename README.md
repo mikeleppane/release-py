@@ -55,17 +55,25 @@ pipx install releasio
 ## Quick Start
 
 ```bash
-# 1. Check what would happen
+# 1. Check what would happen (always safe)
 releasio check
 
-# 2. Create a release PR (recommended workflow)
+# 2. Preview a release PR (safe - dry-run by default)
 releasio release-pr
 
-# 3. After merging the PR, perform the release
+# 3. Create the release PR
+releasio release-pr --execute
+
+# 4. After merging the PR, preview the release
 releasio release
+
+# 5. Perform the actual release
+releasio release --execute
 ```
 
-That's it! releasio handles version bumping, changelog generation, git tagging, PyPI publishing, and GitHub release creation.
+All commands that make changes default to **dry-run mode** for safety. Use `--execute` to apply changes.
+
+releasio handles version bumping, changelog generation, git tagging, PyPI publishing, and GitHub release creation.
 
 ## CLI Commands
 
@@ -75,16 +83,30 @@ That's it! releasio handles version bumping, changelog generation, git tagging, 
 | `releasio update` | Update version and changelog locally |
 | `releasio release-pr` | Create or update a release pull request |
 | `releasio release` | Tag, publish to PyPI, and create GitHub release |
+| `releasio do-release` | **Complete workflow**: update + commit + tag + publish (recommended) |
 | `releasio check-pr` | Validate PR title follows conventional commits |
 | `releasio init` | Initialize releasio configuration |
 
 ### Common Options
 
 ```bash
-releasio update --execute              # Apply changes (default is dry-run)
+# All commands that make changes default to dry-run (safe mode)
+releasio update                        # Preview changes (dry-run)
+releasio update --execute              # Apply changes
+releasio release-pr                    # Preview PR (dry-run)
+releasio release-pr --execute          # Create/update PR
+releasio release                       # Preview release (dry-run)
+releasio release --execute             # Perform release
+
+# Complete release workflow (recommended for simple projects)
+releasio do-release                    # Preview complete release (dry-run)
+releasio do-release --execute          # Update + commit + tag + publish
+
+# Version control
 releasio update --version 2.0.0        # Force specific version
 releasio update --prerelease alpha     # Create pre-release (1.2.0a1)
-releasio release --skip-publish        # Skip PyPI publishing
+releasio do-release --execute --version 2.0.0  # One-command release with version override
+releasio release --execute --skip-publish  # Skip PyPI publishing
 releasio check-pr --require-scope      # Require scope in PR title
 ```
 
@@ -199,6 +221,8 @@ Add to `pyproject.toml` if you need to customize:
 ```toml
 [tool.releasio]
 default_branch = "main"
+
+[tool.releasio.version]
 tag_prefix = "v"
 
 [tool.releasio.commits]
@@ -206,6 +230,7 @@ types_minor = ["feat"]
 types_patch = ["fix", "perf", "docs"]
 
 [tool.releasio.changelog]
+path = "CHANGELOG.md"
 use_github_prs = false  # Set to true for squash merge workflows
 
 [tool.releasio.github]
@@ -413,10 +438,9 @@ update_lock_file = false
 [tool.releasio]
 default_branch = "main"          # Branch for releases
 allow_dirty = false              # Allow releases from dirty working directory
-tag_prefix = "v"                 # Git tag prefix (v1.0.0)
-changelog_path = "CHANGELOG.md"  # Path to changelog file
 
 [tool.releasio.version]
+tag_prefix = "v"                 # Git tag prefix (v1.0.0)
 initial_version = "0.1.0"        # Version for first release
 version_files = []               # Additional files to update version in
 auto_detect_version_files = false  # Auto-detect __init__.py, __version__.py, etc.

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -407,14 +407,6 @@ class ReleasePyConfig(BaseModel):
         default=False,
         description="Allow releases from dirty working directory",
     )
-    tag_prefix: Annotated[str, Field(deprecated="Use version.tag_prefix instead")] = Field(
-        default="v",
-        description="Prefix for git tags (deprecated: use version.tag_prefix)",
-    )
-    changelog_path: Annotated[Path, Field(deprecated="Use changelog.path instead")] = Field(
-        default=Path("CHANGELOG.md"),
-        description="Path to changelog (deprecated: use changelog.path)",
-    )
 
     # Sub-configurations
     commits: CommitsConfig = Field(default_factory=CommitsConfig)
@@ -433,22 +425,6 @@ class ReleasePyConfig(BaseModel):
     )
 
     model_config = {"extra": "forbid"}
-
-    @property
-    def effective_tag_prefix(self) -> str:
-        """Get the effective tag prefix (preferring version.tag_prefix)."""
-        # If version.tag_prefix is explicitly set to something other than default,
-        # use it. Otherwise fall back to the top-level tag_prefix.
-        if self.version.tag_prefix != "v":
-            return self.version.tag_prefix
-        return self.tag_prefix
-
-    @property
-    def effective_changelog_path(self) -> Path:
-        """Get the effective changelog path (preferring changelog.path)."""
-        if self.changelog.path != Path("CHANGELOG.md"):
-            return self.changelog.path
-        return self.changelog_path
 
     @property
     def is_monorepo(self) -> bool:

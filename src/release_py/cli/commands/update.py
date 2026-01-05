@@ -72,7 +72,7 @@ def run_update(
         raise SystemExit(1) from e
 
     # Get latest tag
-    tag_pattern = f"{config.effective_tag_prefix}*"
+    tag_pattern = f"{config.version.tag_prefix}*"
     latest_tag = repo.get_latest_tag(tag_pattern)
 
     # Detect first release (no existing tags)
@@ -147,7 +147,7 @@ def run_update(
             Panel(
                 "[bold]Would make the following changes:[/]\n\n"
                 f"  • Update version in [cyan]pyproject.toml[/]\n"
-                f"  • Generate changelog in [cyan]{config.effective_changelog_path}[/]",
+                f"  • Generate changelog in [cyan]{config.changelog.path}[/]",
                 title="[yellow]Dry Run Preview[/]",
                 border_style="yellow",
             )
@@ -247,7 +247,7 @@ def run_update(
         )
 
         # Write changelog
-        changelog_path = project_path / config.effective_changelog_path
+        changelog_path = project_path / config.changelog.path
         if changelog_path.exists():
             existing = changelog_path.read_text()
             # Insert new content after header
@@ -257,7 +257,7 @@ def run_update(
             new_content = changelog_content
 
         changelog_path.write_text(new_content)
-        console.print(f"  [green]✓[/] Updated {config.effective_changelog_path}")
+        console.print(f"  [green]✓[/] Updated {config.changelog.path}")
     except Exception as e:
         err_console.print(f"[red]Error generating changelog:[/] {e}")
         raise SystemExit(1) from e

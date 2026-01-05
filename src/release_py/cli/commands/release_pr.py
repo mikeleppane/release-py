@@ -64,7 +64,7 @@ def run_release_pr(
         raise SystemExit(1) from e
 
     # Get latest tag
-    tag_pattern = f"{config.effective_tag_prefix}*"
+    tag_pattern = f"{config.version.tag_prefix}*"
     latest_tag = repo.get_latest_tag(tag_pattern)
 
     # Detect first release (no existing tags)
@@ -161,7 +161,7 @@ def run_release_pr(
         console.print()
         console.print("[bold]PR Body:[/]")
         console.print(Panel(pr_body, border_style="dim"))
-        console.print("\n[dim]Run without [cyan]--dry-run[/] to create the PR.[/]")
+        console.print("\n[dim]Run with [cyan]--execute[/] to create the PR.[/]")
         return
 
     # Actually create the PR
@@ -252,7 +252,7 @@ def run_release_pr(
         changelog_content = generate_changelog(
             repo=repo, version=next_version, config=config, github_repo=github_repo_str
         )
-        changelog_path = project_path / config.effective_changelog_path
+        changelog_path = project_path / config.changelog.path
 
         if changelog_path.exists():
             existing = changelog_path.read_text()
@@ -261,7 +261,7 @@ def run_release_pr(
             new_content = changelog_content
 
         changelog_path.write_text(new_content)
-        console.print(f"  [green]✓[/] Updated {config.effective_changelog_path}")
+        console.print(f"  [green]✓[/] Updated {config.changelog.path}")
         files_to_commit.append(changelog_path)
 
         # Commit changes
@@ -269,7 +269,10 @@ def run_release_pr(
         repo.commit(commit_message, files_to_commit)
         console.print("  [green]✓[/] Committed changes")
 
-        # Push branch
+        # Push branch (force push to release branch)
+        console.print(
+            f"  [yellow]⚠[/] Force pushing to [cyan]{config.github.release_pr_branch}[/] branch"
+        )
         repo.push(branch=config.github.release_pr_branch, force=True, set_upstream=True)
         console.print("  [green]✓[/] Pushed to origin")
 
