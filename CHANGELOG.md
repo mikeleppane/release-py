@@ -1,3 +1,13 @@
+## [2.1.3] - 2026-01-05
+
+### 🐛 Bug Fixes
+
+- *(ci)* Skip release-pr job on release commits
+
+### 📚 Documentation
+
+- Document CI limitation for release PRs created by GITHUB_TOKEN
+- Update GitHub Actions workflow documentation
 ## [2.1.2] - 2026-01-05
 
 ### 🐛 Bug Fixes
