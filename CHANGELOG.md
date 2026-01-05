@@ -1,3 +1,12 @@
+## [2.1.6] - 2026-01-05
+
+### 🐛 Bug Fixes
+
+- *(docs)* Fix relative links and remove strict mode
+
+### 📚 Documentation
+
+- Add MkDocs documentation site
 ## [2.1.5] - 2026-01-05
 
 ### 🐛 Bug Fixes
