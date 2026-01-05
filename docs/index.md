@@ -22,7 +22,7 @@ hide:
 </p>
 
 <p align="center">
-  <a href="getting-started/quickstart/" class="md-button md-button--primary">Get Started</a>
+  <a href="getting-started/quickstart.md" class="md-button md-button--primary">Get Started</a>
   <a href="https://github.com/mikeleppane/releasio" class="md-button">View on GitHub</a>
 </p>
 
@@ -39,7 +39,7 @@ hide:
     Automatically creates and maintains release PRs with version bumps and changelogs.
     Merge to release.
 
-    [:octicons-arrow-right-24: Learn more](github/actions/)
+    [:octicons-arrow-right-24: Learn more](github/actions/index.md)
 
 -   :material-format-list-checks: **Conventional Commits**
 
@@ -48,7 +48,7 @@ hide:
     Automatic version bumping based on commit types. `feat:` bumps minor,
     `fix:` bumps patch, `!` bumps major.
 
-    [:octicons-arrow-right-24: Commit format](user-guide/commits/format/)
+    [:octicons-arrow-right-24: Commit format](user-guide/commits/format.md)
 
 -   :material-file-document-edit: **Beautiful Changelogs**
 
@@ -57,7 +57,7 @@ hide:
     Professional changelog generation with git-cliff. PR links, author attribution,
     and customizable templates.
 
-    [:octicons-arrow-right-24: Changelog guide](user-guide/changelog/)
+    [:octicons-arrow-right-24: Changelog guide](user-guide/changelog/index.md)
 
 -   :material-cog-outline: **Zero Configuration**
 
@@ -66,7 +66,7 @@ hide:
     Works out of the box with sensible defaults. Just run `releasio check`
     to see what would happen.
 
-    [:octicons-arrow-right-24: Configuration](user-guide/configuration/)
+    [:octicons-arrow-right-24: Configuration](user-guide/configuration/index.md)
 
 -   :material-github: **GitHub Actions**
 
@@ -75,7 +75,7 @@ hide:
     Native GitHub Actions support with trusted publishing (OIDC).
     No API tokens required for PyPI.
 
-    [:octicons-arrow-right-24: Actions setup](github/actions/minimal/)
+    [:octicons-arrow-right-24: Actions setup](github/actions/minimal.md)
 
 -   :material-package-variant: **PyPI Publishing**
 
@@ -84,7 +84,7 @@ hide:
     Build and publish to PyPI with uv, poetry, pdm, or twine.
     Supports trusted publishing and private registries.
 
-    [:octicons-arrow-right-24: Publishing guide](publishing/pypi/)
+    [:octicons-arrow-right-24: Publishing guide](publishing/pypi.md)
 
 </div>
 
@@ -102,7 +102,7 @@ graph LR
     E --> F[GitHub Release + PyPI]
 ```
 
-1. **Push commits** to your main branch using [conventional commit](user-guide/commits/format/) messages
+1. **Push commits** to your main branch using [conventional commit](user-guide/commits/format.md) messages
 2. **releasio release-pr** automatically creates a release PR with:
     - Version bump based on commit types
     - Updated changelog
@@ -153,7 +153,7 @@ releasio do-release --execute
 Does everything in one command: updates version, generates changelog,
 commits, tags, and publishes.
 
-[:octicons-arrow-right-24: Full getting started guide](getting-started/quickstart/)
+[:octicons-arrow-right-24: Full getting started guide](getting-started/quickstart.md)
 
 ---
 
@@ -248,7 +248,7 @@ releasio follows [Semantic Versioning](https://semver.org/) with automatic detec
               github-token: ${{ secrets.GITHUB_TOKEN }}
     ```
 
-[:octicons-arrow-right-24: Complete GitHub Actions guide](github/actions/)
+[:octicons-arrow-right-24: Complete GitHub Actions guide](github/actions/index.md)
 
 ---
 
@@ -292,4 +292,4 @@ releasio works with zero configuration, but you can customize everything:
     path = "CHANGELOG.md"
     ```
 
-[:octicons-arrow-right-24: Full configuration reference](user-guide/configuration/reference/)
+[:octicons-arrow-right-24: Full configuration reference](user-guide/configuration/reference.md)

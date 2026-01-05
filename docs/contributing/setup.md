@@ -326,4 +326,4 @@ Releases are automated via GitHub Actions:
 ## See Also
 
 - [Architecture Overview](../architecture/overview.md) - System design
-- [API Reference](../reference/) - Code documentation
+- [API Reference](../reference/index.md) - Code documentation

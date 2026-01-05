@@ -137,4 +137,4 @@ class VersionConfig(BaseModel):
 ## See Also
 
 - [Contributing](../contributing/index.md) - Development guide
-- [API Reference](../reference/) - Code documentation
+- [API Reference](../reference/index.md) - Code documentation

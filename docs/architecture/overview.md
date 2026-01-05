@@ -370,4 +370,4 @@ def sample_config() -> ReleasePyConfig:
 
 - [Data Flow](data-flow.md) - How data moves through the system
 - [Contributing](../contributing/index.md) - Development guide
-- [API Reference](../reference/) - Code documentation
+- [API Reference](../reference/index.md) - Code documentation

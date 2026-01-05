@@ -102,7 +102,7 @@ plugins:
             docstring_section_style: spacy
             show_signature_annotations: true
             separate_signature: true
-            signature_crossrefs: true
+            signature_crossrefs: false
             merge_init_into_class: true
             show_if_no_docstring: false
 

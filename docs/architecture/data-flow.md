@@ -389,4 +389,4 @@ ReleaseError
 
 - [System Overview](overview.md) - Component architecture
 - [Configuration](../user-guide/configuration/reference.md) - Config options
-- [API Reference](../reference/) - Code documentation
+- [API Reference](../reference/index.md) - Code documentation
