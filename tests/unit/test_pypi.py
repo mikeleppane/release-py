@@ -14,6 +14,7 @@ from release_py.publish.pypi import (
     build_package,
     check_pypi_version_exists,
     publish_package,
+    validate_dist_files,
 )
 
 if TYPE_CHECKING:
@@ -628,3 +629,117 @@ class TestBuildCustomCommand:
 
             with pytest.raises(BuildError, match="Custom build command failed"):
                 build_package(tmp_path, custom_command=custom_cmd)
+
+
+class TestValidateDistFiles:
+    """Tests for distribution file validation."""
+
+    def test_validate_with_twine_success(self, tmp_path: Path):
+        """Validation succeeds when twine check passes."""
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        whl = dist_dir / "package-1.0.0-py3-none-any.whl"
+        whl.write_text("fake wheel")
+        tarball = dist_dir / "package-1.0.0.tar.gz"
+        tarball.write_text("fake tarball")
+
+        with patch("shutil.which", return_value="/usr/bin/twine"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(
+                    returncode=0,
+                    stdout="Checking dist/package-1.0.0-py3-none-any.whl: PASSED\nChecking dist/package-1.0.0.tar.gz: PASSED",
+                )
+
+                is_valid, message = validate_dist_files([whl, tarball])
+
+                assert is_valid is True
+                assert "PASSED" in message or "passed" in message.lower()
+                mock_run.assert_called_once()
+                call_args = mock_run.call_args[0][0]
+                assert "twine" in call_args
+                assert "check" in call_args
+
+    def test_validate_with_twine_failure(self, tmp_path: Path):
+        """Validation fails when twine check fails."""
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        whl = dist_dir / "package-1.0.0-py3-none-any.whl"
+        whl.write_text("invalid wheel")
+
+        with patch("shutil.which", return_value="/usr/bin/twine"):
+            with patch("subprocess.run") as mock_run:
+                error = subprocess.CalledProcessError(1, "twine check")
+                error.stdout = "Checking dist/package-1.0.0-py3-none-any.whl: FAILED"
+                error.stderr = "Package metadata is invalid"
+                mock_run.side_effect = error
+
+                is_valid, message = validate_dist_files([whl])
+
+                assert is_valid is False
+                assert "Validation failed" in message
+                assert "metadata is invalid" in message
+
+    def test_validate_without_twine_basic_checks(self, tmp_path: Path):
+        """Fallback to basic validation when twine not available."""
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        whl = dist_dir / "package-1.0.0-py3-none-any.whl"
+        whl.write_text("fake wheel")
+
+        with patch("shutil.which", return_value=None):
+            is_valid, message = validate_dist_files([whl])
+
+            assert is_valid is True
+            assert "basic checks only" in message
+
+    def test_validate_file_not_exists(self, tmp_path: Path):
+        """Validation fails when file doesn't exist."""
+        nonexistent = tmp_path / "dist" / "nonexistent.whl"
+
+        with patch("shutil.which", return_value=None):
+            is_valid, message = validate_dist_files([nonexistent])
+
+            assert is_valid is False
+            assert "not found" in message
+
+    def test_validate_invalid_extension(self, tmp_path: Path):
+        """Validation fails for invalid file types."""
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        invalid_file = dist_dir / "package-1.0.0.txt"
+        invalid_file.write_text("not a distribution file")
+
+        with patch("shutil.which", return_value=None):
+            is_valid, message = validate_dist_files([invalid_file])
+
+            assert is_valid is False
+            assert "Invalid distribution file type" in message
+
+    def test_validate_empty_list(self):
+        """Validation fails when no files provided."""
+        is_valid, message = validate_dist_files([])
+
+        assert is_valid is False
+        assert "No distribution files" in message
+
+    def test_validate_multiple_files(self, tmp_path: Path):
+        """Validation checks multiple files."""
+        dist_dir = tmp_path / "dist"
+        dist_dir.mkdir()
+        whl = dist_dir / "package-1.0.0-py3-none-any.whl"
+        whl.write_text("fake wheel")
+        tarball = dist_dir / "package-1.0.0.tar.gz"
+        tarball.write_text("fake tarball")
+        sdist = dist_dir / "package-1.0.0.zip"
+        sdist.write_text("fake sdist")
+
+        with patch("shutil.which", return_value="/usr/bin/twine"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="All checks passed")
+
+                is_valid, _ = validate_dist_files([whl, tarball, sdist])
+
+                assert is_valid is True
+                # Should call twine check with all three files
+                call_args = mock_run.call_args[0][0]
+                assert len([arg for arg in call_args if arg.endswith((".whl", ".gz", ".zip"))]) == 3

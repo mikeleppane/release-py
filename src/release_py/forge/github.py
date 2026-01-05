@@ -14,6 +14,7 @@ import asyncio
 import os
 import subprocess
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -167,7 +168,7 @@ class GitHubClient:
                     return {}
 
                 result: dict[str, Any] = response.json()
-                return result  # noqa: TRY300
+                return result
 
             except httpx.RequestError as e:
                 last_error = e
@@ -400,7 +401,61 @@ class GitHubClient:
             draft=data.get("draft", False),
             prerelease=data.get("prerelease", False),
             assets=assets,
+            id=data.get("id"),
         )
+
+    async def upload_release_asset(
+        self,
+        release_id: int,
+        file_path: Path,
+        *,
+        content_type: str = "application/octet-stream",
+    ) -> str:
+        """Upload an asset to a GitHub release.
+
+        Args:
+            release_id: The release ID from the GitHub API
+            file_path: Path to the file to upload
+            content_type: MIME type of the file
+
+        Returns:
+            URL of the uploaded asset
+
+        Raises:
+            ForgeError: If upload fails
+        """
+
+        if not file_path.exists():
+            raise ForgeError(f"Asset file not found: {file_path}")
+
+        # GitHub uses a different upload URL
+        upload_url = f"https://uploads.github.com/repos/{self.owner}/{self.repo}/releases/{release_id}/assets"
+
+        headers = {
+            **self._get_headers(),
+            "Content-Type": content_type,
+        }
+
+        params = {"name": file_path.name}
+
+        with file_path.open("rb") as f:
+            file_data = f.read()
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                upload_url,
+                headers=headers,
+                params=params,
+                content=file_data,
+            )
+
+        if response.status_code not in {200, 201}:
+            raise ForgeError(
+                f"Failed to upload asset {file_path.name}: {response.status_code} {response.text}"
+            )
+
+        data: dict[str, Any] = response.json()
+        return str(data["browser_download_url"])
 
     # =========================================================================
     # PR-based Changelog & Contributors (for large open source projects)

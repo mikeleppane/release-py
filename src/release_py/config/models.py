@@ -225,6 +225,18 @@ class ChangelogConfig(BaseModel):
             "Available variables: {scope}, {description}, {author}, {hash}, {body}, {type}"
         ),
     )
+    show_first_time_contributors: bool = Field(
+        default=False,
+        description="Highlight first-time contributors in changelog",
+    )
+    first_contributor_badge: str = Field(
+        default="🎉 First contribution!",
+        description="Badge to show for first-time contributors",
+    )
+    include_dependency_updates: bool = Field(
+        default=False,
+        description="Include dependency updates section in changelog",
+    )
     native_fallback: bool = Field(
         default=True,
         description=(
@@ -314,6 +326,13 @@ class GitHubConfig(BaseModel):
         default=False,
         description="Create releases as drafts",
     )
+    release_assets: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Files to upload as release assets (supports glob patterns). "
+            "Example: ['dist/*.whl', 'dist/*.tar.gz', 'docs/build/html.zip']"
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -336,6 +355,14 @@ class PublishConfig(BaseModel):
     trusted_publishing: bool = Field(
         default=True,
         description="Use OIDC trusted publishing when available",
+    )
+    validate_before_publish: bool = Field(
+        default=True,
+        description="Run validation (twine check) before publishing",
+    )
+    check_existing_version: bool = Field(
+        default=True,
+        description="Check if version already exists on PyPI before publishing",
     )
 
     model_config = {"extra": "forbid"}
@@ -391,6 +418,32 @@ class HooksConfig(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class SecurityConfig(BaseModel):
+    """Configuration for security advisory integration.
+
+    Automatically creates GitHub Security Advisories for security fixes.
+    """
+
+    enabled: bool = Field(
+        default=False,
+        description="Enable automatic security advisory creation",
+    )
+    auto_create_advisory: bool = Field(
+        default=True,
+        description="Automatically create GitHub Security Advisories for security fixes",
+    )
+    security_patterns: list[str] = Field(
+        default_factory=lambda: [
+            r"fix\(security\):",
+            r"security:",
+            r"CVE-\d{4}-\d+",
+        ],
+        description="Regex patterns to detect security-related commits",
+    )
+
+    model_config = {"extra": "forbid"}
+
+
 class ReleasePyConfig(BaseModel):
     """Main configuration for releasio.
 
@@ -416,6 +469,7 @@ class ReleasePyConfig(BaseModel):
     publish: PublishConfig = Field(default_factory=PublishConfig)
     packages: PackagesConfig = Field(default_factory=PackagesConfig)
     hooks: HooksConfig = Field(default_factory=HooksConfig)
+    security: SecurityConfig = Field(default_factory=SecurityConfig)
     branches: dict[str, BranchConfig] = Field(
         default_factory=dict,
         description=(

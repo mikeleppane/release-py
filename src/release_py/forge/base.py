@@ -65,6 +65,7 @@ class Release:
         draft: Whether this is a draft release
         prerelease: Whether this is a pre-release
         assets: List of asset URLs
+        id: Release ID from the forge API (used for uploading assets)
     """
 
     tag: str
@@ -74,6 +75,7 @@ class Release:
     draft: bool
     prerelease: bool
     assets: list[str]
+    id: int | None = None
 
 
 @runtime_checkable

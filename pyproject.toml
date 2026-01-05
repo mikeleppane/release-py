@@ -102,8 +102,11 @@ ignore = [
     "PLR2004",  # Magic value comparison
     "PLR0915",  # Too many statements (CLI commands are verbose)
     "TRY003",   # Long exception messages
+    "TRY300",   # Consider moving statement to else block (style preference)
+    "TRY301",   # Abstract raise to inner function (CLI error handling is clearer inline)
     "PLC0415",  # Import not at top-level (intentional for lazy loading)
     "TC002",    # Console used at runtime for progress spinners, not just typing
+    "TC003",    # Annotated import in TYPE_CHECKING (Path used at runtime)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -115,6 +118,7 @@ ignore = [
     "SIM117",   # nested with statements (more readable in tests)
     "E501",     # line too long (test data can be verbose)
     "SLF001",   # private member access (acceptable in tests)
+    "TRY002",   # Generic Exception in tests (acceptable)
 ]
 
 [tool.ruff.lint.isort]

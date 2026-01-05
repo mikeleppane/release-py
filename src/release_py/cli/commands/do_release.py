@@ -208,6 +208,7 @@ def run_do_release(
         console.print("\n[bold]Phase 4: Publishing to PyPI[/]")
         _perform_publish(
             project_path=project_path,
+            project_name=project_name,
             next_version=next_version,
             config=config,
             console=console,
@@ -410,6 +411,7 @@ def _perform_update(
 
 def _perform_publish(
     project_path: Path,
+    project_name: str,
     next_version: Version,
     config: ReleasePyConfig,
     console: Console,
@@ -426,7 +428,7 @@ def _perform_publish(
         console.print(f"  • Building package with {config.publish.tool}...")
 
     try:
-        build_package(
+        dist_files = build_package(
             project_path,
             custom_command=custom_build,
             version=str(next_version),
@@ -438,10 +440,44 @@ def _perform_publish(
         err_console.print(f"[red]Error building package:[/] {e}")
         raise SystemExit(1) from e
 
+    # Validate distribution files
+    if config.publish.validate_before_publish:
+        console.print("  • Validating distribution files...")
+        from release_py.publish.pypi import validate_dist_files
+
+        try:
+            is_valid, validation_message = validate_dist_files(dist_files)
+            if not is_valid:
+                err_console.print(
+                    f"[red]Error:[/] Package validation failed:\n{validation_message}"
+                )
+                raise SystemExit(1)
+            console.print("  [green]✓[/] Distribution files validated")
+        except Exception as e:
+            err_console.print(f"[red]Error validating package:[/] {e}")
+            raise SystemExit(1) from e
+
+    # Check if version already exists on PyPI
+    if config.publish.check_existing_version:
+        console.print("  • Checking if version exists on PyPI...")
+        from release_py.publish.pypi import check_pypi_version_exists
+
+        try:
+            if check_pypi_version_exists(project_name, str(next_version)):
+                err_console.print(
+                    f"[red]Error:[/] Version {next_version} already exists on PyPI.\n"
+                    "This version may have already been published."
+                )
+                raise SystemExit(1)
+            console.print("  [green]✓[/] Version not yet published")
+        except Exception as e:
+            err_console.print(f"[red]Error checking PyPI:[/] {e}")
+            raise SystemExit(1) from e
+
     # Publish
     console.print("  • Publishing to PyPI...")
     try:
-        publish_package(project_path, config.publish, console=console)
+        publish_package(project_path, config.publish, dist_files=dist_files, console=console)
         console.print("  [green]✓[/] Published to PyPI")
     except Exception as e:
         err_console.print(f"[red]Error publishing to PyPI:[/] {e}")
@@ -528,7 +564,10 @@ def _create_github_release(
         github_usernames=github_usernames,
     )
 
-    async def create_release() -> str:
+    async def create_release_with_assets() -> tuple[str, list[str]]:
+        from mimetypes import guess_type
+
+        # Create release
         release = await github.create_release(
             tag=tag_name,
             name=f"{project_name} v{next_version}",
@@ -536,15 +575,40 @@ def _create_github_release(
             draft=config.github.draft_releases,
             prerelease=next_version.is_prerelease,
         )
-        return release.url
+
+        asset_urls = []
+        # Upload assets if configured
+        if config.github.release_assets and release.id:
+            for pattern in config.github.release_assets:
+                # Use Path.glob() for better pathlib integration
+                asset_paths = list(repo.path.glob(pattern))
+                for asset_path in asset_paths:
+                    if asset_path.exists():
+                        content_type = guess_type(str(asset_path))[0] or "application/octet-stream"
+                        try:
+                            url = await github.upload_release_asset(
+                                release.id, asset_path, content_type=content_type
+                            )
+                            asset_urls.append(url)
+                        except Exception as e:
+                            console.print(f"  [yellow]⚠[/] Failed to upload {asset_path.name}: {e}")
+
+        return release.url, asset_urls
 
     try:
-        release_url = asyncio.run(create_release())
+        release_url, uploaded_assets = asyncio.run(create_release_with_assets())
     except Exception as e:
         err_console.print(f"[red]Error creating GitHub release:[/] {e}")
         raise SystemExit(1) from e
     else:
         console.print("  [green]✓[/] Created GitHub release")
+        if uploaded_assets:
+            console.print(f"  [green]✓[/] Uploaded {len(uploaded_assets)} asset(s)")
+
+        # TODO: Future Feature - Security Advisory Integration
+        # See detailed implementation notes in release.py:299-336
+        # Same security advisory logic should be applied here
+
         return release_url
 
 

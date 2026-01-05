@@ -430,6 +430,43 @@ def _publish_with_pdm(
         raise UploadError(f"pdm publish failed:\n{e.stderr}") from e
 
 
+def validate_dist_files(dist_files: list[Path]) -> tuple[bool, str]:
+    """Validate distribution files using twine check.
+
+    Args:
+        dist_files: List of dist files to validate
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not dist_files:
+        return False, "No distribution files to validate"
+
+    # Check if twine is available
+    if shutil.which("twine") is None:
+        # Fallback: basic validation - just check files exist and have correct extensions
+        for dist_file in dist_files:
+            if not dist_file.exists():
+                return False, f"Distribution file not found: {dist_file}"
+            if dist_file.suffix not in {".whl", ".gz", ".zip"}:
+                return False, f"Invalid distribution file type: {dist_file}"
+        return True, "Validation passed (twine not available, basic checks only)"
+
+    # Use twine check
+    cmd = ["twine", "check"] + [str(f) for f in dist_files]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return True, result.stdout
+    except subprocess.CalledProcessError as e:
+        return False, f"Validation failed:\n{e.stdout}\n{e.stderr}"
+
+
 def check_pypi_version_exists(
     package_name: str,
     version: str,
@@ -449,7 +486,6 @@ def check_pypi_version_exists(
 
     try:
         response = httpx.get(url, timeout=10)
+        return response.status_code == 200
     except httpx.HTTPError:
         return False
-    else:
-        return response.status_code == 200

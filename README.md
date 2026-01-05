@@ -535,6 +535,85 @@ prerelease_token = "beta"
 
 </details>
 
+## Advanced Features
+
+### Release Asset Uploads
+
+Upload files to GitHub releases automatically (e.g., binaries, documentation archives, wheel files).
+
+```toml
+[tool.releasio.github]
+release_assets = [
+    "dist/*.whl",           # Upload all wheel files
+    "dist/*.tar.gz",        # Upload source distributions
+    "docs/build/html.zip",  # Upload documentation archive
+]
+```
+
+Supports glob patterns for flexible file matching. Assets are uploaded after the GitHub release is created. If an upload fails, a warning is shown but the release continues.
+
+**Example use cases:**
+
+- Upload compiled binaries for different platforms
+- Attach documentation archives
+- Include license files or additional resources
+- Publish distribution files directly to GitHub releases
+
+### Package Validation
+
+Validate distribution files before publishing to PyPI using `twine check`.
+
+```toml
+[tool.releasio.publish]
+validate_before_publish = true  # Run twine check before publishing
+check_existing_version = true   # Check if version already exists on PyPI
+```
+
+**What it does:**
+
+- `validate_before_publish`: Runs `twine check` on built packages to ensure metadata is valid and follows PyPI requirements
+- `check_existing_version`: Queries PyPI API to verify the version hasn't been published yet, preventing accidental republishing
+
+Falls back to basic checks (file existence, extension validation) if `twine` is not installed.
+
+### Future Features (Coming Soon)
+
+The following features are planned and have configuration fields available, but are not yet implemented. See TODO comments in the codebase for implementation details:
+
+#### First-Time Contributor Recognition
+
+```toml
+[tool.releasio.changelog]
+show_first_time_contributors = true
+first_contributor_badge = "🎉 First contribution!"
+```
+
+Highlights first-time contributors in changelogs with a customizable badge. Perfect for celebrating new community members.
+
+#### Dependency Update Notifications
+
+```toml
+[tool.releasio.changelog]
+include_dependency_updates = true
+```
+
+Automatically detects and includes dependency updates in the changelog by comparing lock files (uv.lock, poetry.lock, pdm.lock) between releases.
+
+#### Security Advisory Integration
+
+```toml
+[tool.releasio.security]
+enabled = true
+auto_create_advisory = true
+security_patterns = [
+    "fix\\(security\\):",
+    "security:",
+    "CVE-\\d{4}-\\d+",
+]
+```
+
+Automatically creates GitHub Security Advisories when security-related commits are detected in a release.
+
 ## Requirements
 
 - Python 3.11+

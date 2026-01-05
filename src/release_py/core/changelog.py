@@ -217,6 +217,70 @@ def _run_git_cliff(
 
 
 # =============================================================================
+# TODO: Future Feature - First-Time Contributor Recognition
+# =============================================================================
+# Configuration fields already added to ChangelogConfig:
+# - show_first_time_contributors: bool
+# - first_contributor_badge: str
+#
+# Implementation tasks:
+# 1. Query GitHub API for each contributor's contribution history
+#    - Use GitHubClient.get_contributor_stats() or similar endpoint
+#    - Determine if this is their first merged PR to the repository
+# 2. Add badge/marker in changelog for first-time contributors
+#    - Default: "🎉 First contribution!"
+#    - Customizable via config.changelog.first_contributor_badge
+# 3. Update git-cliff template to include first-time contributor markers
+#    - May require post-processing of git-cliff output
+#    - Or use git-cliff's commit_preprocessors feature
+# 4. Handle rate limiting and caching for GitHub API calls
+# 5. Add tests for first-time contributor detection
+#
+# Related files:
+# - src/release_py/forge/github.py - Add get_contributor_stats() method
+# - src/release_py/cli/commands/release.py - Pass config flag to changelog gen
+# - tests/unit/test_changelog.py - Add tests for first-time contributor badges
+# =============================================================================
+
+
+# =============================================================================
+# TODO: Future Feature - Dependency Update Notifications
+# =============================================================================
+# Configuration fields already added to ChangelogConfig:
+# - include_dependency_updates: bool
+#
+# Implementation tasks:
+# 1. Parse lock files to detect dependency changes
+#    - Support: uv.lock, poetry.lock, pdm.lock, requirements.txt
+#    - Compare current lock file with previous tagged version
+# 2. Categorize dependency updates:
+#    - Major updates (breaking changes)
+#    - Minor updates (new features)
+#    - Patch updates (bug fixes)
+#    - New dependencies added
+#    - Dependencies removed
+# 3. Generate dependency changelog section:
+#    - Group by category (added, removed, updated)
+#    - Show version changes (e.g., "httpx: 0.27.0 → 0.28.0")
+#    - Link to dependency's changelog if available
+# 4. Integrate with existing changelog generation
+#    - Add as separate "Dependencies" section
+#    - Respect config.changelog.include_dependency_updates flag
+# 5. Handle edge cases:
+#    - First release (no previous lock file)
+#    - Lock file format changes
+#    - Transitive dependency updates
+# 6. Add tests for dependency detection and changelog formatting
+#
+# Related files:
+# - src/release_py/project/dependencies.py (new) - Lock file parsing logic
+# - src/release_py/vcs/git.py - Add method to get file content at tag
+# - src/release_py/cli/commands/release.py - Pass config flag
+# - tests/unit/test_dependencies.py (new) - Tests for lock file parsing
+# =============================================================================
+
+
+# =============================================================================
 # Native Changelog Generation (fallback when git-cliff unavailable)
 # =============================================================================
 
