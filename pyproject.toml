@@ -165,8 +165,12 @@ exclude_lines = [
 
 [tool.releasio]
 default_branch = "main"
+
+[tool.releasio.version]
 tag_prefix = "v"
-changelog_path = "CHANGELOG.md"
+
+[tool.releasio.changelog]
+path = "CHANGELOG.md"
 
 [tool.releasio.commits]
 types_minor = ["feat"]
