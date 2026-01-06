@@ -378,7 +378,7 @@ def _format_commit_entry(
     github_url: str | None = None,
     include_type_emoji: bool = False,
 ) -> str:
-    """Format a single commit entry in FastAPI-style format.
+    """Format a single commit entry for the PR body.
 
     Args:
         pc: ParsedCommit instance
@@ -388,9 +388,9 @@ def _format_commit_entry(
     Returns:
         Formatted commit entry string
 
-    Example output (FastAPI style):
-        ✨ add new feature. PR #123 by @author.
-        🐛 **api:** fix null response. PR #456 by @contributor.
+    Example output:
+        ✨ add new feature. PR #123 by John Doe.
+        🐛 **api:** fix null response. PR #456 by Jane Smith.
     """
     # Type emoji mapping
     type_emojis = {
@@ -421,21 +421,24 @@ def _format_commit_entry(
     description, pr_number = _extract_pr_number(pc.description)
     parts.append(description)
 
-    # Add PR link and author (FastAPI style)
+    # Add PR link and author
+    # Use the git author name without @ prefix to avoid incorrectly mentioning
+    # unrelated GitHub users (git author names are not GitHub usernames)
     author = pc.commit.author_name
+
     if pr_number and github_url:
         pr_url = f"{github_url}/pull/{pr_number}"
-        parts.append(f". PR [#{pr_number}]({pr_url}) by @{author}.")
+        parts.append(f". PR [#{pr_number}]({pr_url}) by {author}.")
     elif pr_number:
-        parts.append(f". PR #{pr_number} by @{author}.")
+        parts.append(f". PR #{pr_number} by {author}.")
     else:
         # No PR number - just add commit link and author
         short_sha = pc.commit.short_sha
         if github_url:
             commit_url = f"{github_url}/commit/{pc.commit.sha}"
-            parts.append(f". Commit [{short_sha}]({commit_url}) by @{author}.")
+            parts.append(f". Commit [{short_sha}]({commit_url}) by {author}.")
         else:
-            parts.append(f". Commit {short_sha} by @{author}.")
+            parts.append(f". Commit {short_sha} by {author}.")
 
     return "".join(parts)
 
