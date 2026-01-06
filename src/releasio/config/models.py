@@ -326,6 +326,15 @@ class GitHubConfig(BaseModel):
         default=False,
         description="Create releases as drafts",
     )
+    release_name_format: str = Field(
+        default="{project} {tag}",
+        description=(
+            "Format for GitHub release title. "
+            "Variables: {project}, {version}, {tag} (version with prefix). "
+            "Examples: '{version}' → '2.3.0', '{project} {version}' → 'myapp 2.3.0', "
+            "'{tag}' → 'v2.3.0'"
+        ),
+    )
     release_assets: list[str] = Field(
         default_factory=list,
         description=(

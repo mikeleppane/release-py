@@ -103,7 +103,37 @@ releasio handles version bumping, changelog generation, git tagging, PyPI publis
 | `releasio release` | Tag, publish to PyPI, and create GitHub release |
 | `releasio do-release` | **Complete workflow**: update + commit + tag + publish (recommended) |
 | `releasio check-pr` | Validate PR title follows conventional commits |
-| `releasio init` | Initialize releasio configuration |
+| `releasio init` | Interactive setup wizard |
+
+### Interactive Setup Wizard
+
+Run `releasio init` to launch an interactive wizard that guides you through configuration:
+
+```bash
+releasio init
+```
+
+**Features:**
+
+- **Two modes**: Quick (6 steps, recommended) or Comprehensive (9 sections for full customization)
+- **Auto-detection**: Build tool, GitHub remote, default branch, existing version, monorepo structure
+- **Output options**: `pyproject.toml`, `.releasio.toml`, or `releasio.toml`
+- **GitHub workflows**: Optionally generates `.github/workflows/release.yml`
+
+```text
+╭────────────────────── Setup Wizard ──────────────────────╮
+│ Welcome to releasio!                                     │
+│                                                          │
+│ This wizard will help you set up automated releases      │
+│ for your project.                                        │
+╰──────────────────────────────────────────────────────────╯
+
+─────────────────── Setup Mode [1/6] ───────────────────────
+Choose how detailed you want the configuration to be
+
+  quick         - Sensible defaults, minimal questions (recommended)
+  comprehensive - Full customization of all options
+```
 
 ### Common Options
 

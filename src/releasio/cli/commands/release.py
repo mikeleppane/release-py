@@ -328,10 +328,17 @@ def run_release(
         async def create_release_with_assets() -> tuple[str, list[str]]:
             from mimetypes import guess_type
 
+            # Format release name using config template
+            release_name = config.github.release_name_format.format(
+                project=project_name,
+                version=current_version,
+                tag=tag_name,
+            )
+
             # Create release
             release = await github.create_release(
                 tag=tag_name,
-                name=f"{project_name} v{current_version}",
+                name=release_name,
                 body=release_body,
                 draft=config.github.draft_releases,
                 prerelease=current_version.is_prerelease,

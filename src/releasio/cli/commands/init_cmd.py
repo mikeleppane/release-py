@@ -94,6 +94,7 @@ class WizardState:
     release_pr_branch: str = "releasio/release"
     release_pr_labels: list[str] = field(default_factory=lambda: ["release"])
     draft_releases: bool = False
+    release_name_format: str = "{project} {tag}"
     release_assets: list[str] = field(default_factory=list)
 
     # Release body settings
@@ -697,6 +698,23 @@ def _section_release_notes(console: Console, state: WizardState) -> WizardState:
         default=True,
     )
 
+    # Release name format
+    console.print()
+    console.print("[bold]Release Title Format[/]")
+    console.print("[dim]How the release appears on GitHub (e.g., 'myapp v1.0.0')[/]")
+    console.print()
+    console.print("  Variables: {project}, {version}, {tag}")
+    console.print("  Examples:")
+    console.print("    {project} {tag}    → myapp v1.0.0 (default)")
+    console.print("    {version}          → 1.0.0")
+    console.print("    {project} {version} → myapp 1.0.0")
+    console.print()
+
+    state.release_name_format = Prompt.ask(
+        "Release title format",
+        default=state.release_name_format,
+    )
+
     return state
 
 
@@ -999,6 +1017,8 @@ def _generate_toml_config(state: WizardState) -> str:
         lines.append(f"release_pr_labels = {_format_list(state.release_pr_labels)}")
         if state.draft_releases:
             lines.append("draft_releases = true")
+        if state.release_name_format != "{project} {tag}":
+            lines.append(f'release_name_format = "{state.release_name_format}"')
         if state.release_assets:
             lines.append(f"release_assets = {_format_list(state.release_assets)}")
 

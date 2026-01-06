@@ -26,6 +26,7 @@ Complete reference for all releasio configuration options.
 | `[github]` | `release_pr_branch` | `"releasio/release"` | Release PR branch name |
 | | `release_pr_labels` | `["release"]` | PR labels |
 | | `draft_releases` | `false` | Create draft releases |
+| | `release_name_format` | `"{project} {tag}"` | Release title format |
 | `[publish]` | `enabled` | `true` | Enable PyPI publishing |
 | | `registry` | PyPI URL | Package registry |
 | | `tool` | `"uv"` | Build/publish tool |
@@ -471,6 +472,43 @@ Create releases as drafts.
 ```toml
 [github]
 draft_releases = true
+```
+
+### `release_name_format`
+
+:octicons-tag-24: Type: `string` · Default: `"{project} {tag}"`
+
+Format for GitHub release title. Customize how the release name appears on the GitHub releases page.
+
+```toml
+[github]
+release_name_format = "{project} {tag}"  # "myapp v1.0.0" (default)
+```
+
+**Available variables:**
+
+- `{project}` - Project name from pyproject.toml (e.g., `myapp`)
+- `{version}` - Version number without prefix (e.g., `1.0.0`)
+- `{tag}` - Full git tag including prefix (e.g., `v1.0.0`)
+
+**Examples:**
+
+```toml
+[github]
+# Just version number
+release_name_format = "{version}"  # → "1.0.0"
+
+# Version with prefix only
+release_name_format = "{tag}"  # → "v1.0.0"
+
+# Project and version (no prefix)
+release_name_format = "{project} {version}"  # → "myapp 1.0.0"
+
+# Custom format
+release_name_format = "Release {version}"  # → "Release 1.0.0"
+
+# With emoji
+release_name_format = "🚀 {project} {tag}"  # → "🚀 myapp v1.0.0"
 ```
 
 ### `release_assets`
