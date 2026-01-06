@@ -4,6 +4,39 @@ Complete reference for all releasio configuration options.
 
 ---
 
+## Quick Reference
+
+| Section | Option | Default | Description |
+|---------|--------|---------|-------------|
+| *General* | `default_branch` | `"main"` | Default branch for releases |
+| | `allow_dirty` | `false` | Allow dirty working directory |
+| `[version]` | `tag_prefix` | `"v"` | Git tag prefix |
+| | `initial_version` | `"0.1.0"` | First release version |
+| | `version_files` | `[]` | Additional version files |
+| | `auto_detect_version_files` | `false` | Auto-detect version files |
+| | `update_lock_file` | `true` | Update lock file after bump |
+| `[changelog]` | `enabled` | `true` | Enable changelog generation |
+| | `path` | `"CHANGELOG.md"` | Changelog file path |
+| | `use_github_prs` | `false` | Use PR-based changelog |
+| | `show_authors` | `false` | Show commit authors |
+| | `native_fallback` | `true` | Use native if git-cliff missing |
+| `[commits]` | `types_minor` | `["feat"]` | Types triggering minor bump |
+| | `types_patch` | `["fix", "perf"]` | Types triggering patch bump |
+| | `breaking_pattern` | `"BREAKING[ -]CHANGE:"` | Breaking change pattern |
+| `[github]` | `release_pr_branch` | `"releasio/release"` | Release PR branch name |
+| | `release_pr_labels` | `["release"]` | PR labels |
+| | `draft_releases` | `false` | Create draft releases |
+| `[publish]` | `enabled` | `true` | Enable PyPI publishing |
+| | `registry` | PyPI URL | Package registry |
+| | `tool` | `"uv"` | Build/publish tool |
+| | `trusted_publishing` | `true` | Use OIDC publishing |
+| `[hooks]` | `pre_bump` | `[]` | Commands before bump |
+| | `post_bump` | `[]` | Commands after bump |
+| | `pre_release` | `[]` | Commands before release |
+| | `post_release` | `[]` | Commands after release |
+
+---
+
 ## General Settings
 
 Top-level settings that apply to the entire release process.

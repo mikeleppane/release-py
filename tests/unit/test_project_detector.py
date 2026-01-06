@@ -42,7 +42,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_hatchling_version(tool_config, tmp_path)
+        version = _resolve_hatchling_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == "1.2.3"
 
@@ -65,7 +65,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_setuptools_version(tool_config, tmp_path)
+        version = _resolve_setuptools_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == "2.0.0"
 
@@ -86,7 +86,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_setuptools_version(tool_config, tmp_path)
+        version = _resolve_setuptools_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == "3.1.4"
 
@@ -107,7 +107,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_flit_version(tool_config, tmp_path)
+        version = _resolve_flit_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == "1.0.0"
 
@@ -128,7 +128,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_pdm_version(tool_config, tmp_path)
+        version = _resolve_pdm_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == "4.2.0"
 
@@ -147,7 +147,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_fallback_version(data, tmp_path)
+        version = _resolve_fallback_version(data, tmp_path)  # type: ignore[arg-type]
 
         assert version == "0.5.0"
 
@@ -161,7 +161,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_hatchling_version(tool_config, tmp_path)
+        version = _resolve_hatchling_version(tool_config, tmp_path)  # type: ignore[arg-type]
 
         assert version == ""
 
@@ -183,7 +183,7 @@ class TestDynamicVersionResolution:
             }
         }
 
-        version = _resolve_dynamic_version(data, tmp_path, "hatchling")
+        version = _resolve_dynamic_version(data, tmp_path, "hatchling")  # type: ignore[arg-type]
 
         assert version == "1.5.0"
 

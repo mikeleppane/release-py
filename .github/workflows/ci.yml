@@ -53,8 +53,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra dev
 
-      - name: Run mypy
+      - name: Run mypy on src
         run: uv run mypy src/
+
+      - name: Run mypy on tests
+        run: uv run mypy tests/
 
   test:
     name: Test (Python ${{ matrix.python-version }})

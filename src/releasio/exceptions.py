@@ -49,10 +49,6 @@ class DirtyRepositoryError(GitError):
     """Repository has uncommitted changes."""
 
 
-class NoCommitsError(GitError):
-    """No commits found since last tag."""
-
-
 class TagExistsError(GitError):
     """Tag already exists."""
 

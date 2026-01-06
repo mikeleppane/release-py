@@ -376,8 +376,9 @@ class TestPublishConfig:
 
     def test_tool_options(self):
         """Different publish tools can be configured."""
-        for tool in ["uv", "poetry", "pdm", "twine"]:
-            config = PublishConfig(tool=tool)
+        tools: list[str] = ["uv", "poetry", "pdm", "twine"]
+        for tool in tools:
+            config = PublishConfig(tool=tool)  # type: ignore[arg-type]
             assert config.tool == tool
 
 
@@ -600,6 +601,17 @@ class TestLoadPyprojectToml:
         with pytest.raises(ConfigNotFoundError):
             load_pyproject_toml(tmp_path / "nonexistent.toml")
 
+    def test_load_malformed_toml_raises(self, tmp_path: Path):
+        """Loading malformed TOML raises ConfigValidationError."""
+        pyproject = tmp_path / "pyproject.toml"
+        # Write invalid TOML (unclosed bracket)
+        pyproject.write_text("""
+[project
+name = "test"
+""")
+        with pytest.raises(ConfigValidationError, match="Invalid TOML"):
+            load_pyproject_toml(pyproject)
+
 
 class TestFindPyprojectToml:
     """Tests for find_pyproject_toml()."""
@@ -817,6 +829,7 @@ class TestChangelogConfigNativeFallback:
         )
 
         assert config.generate_cliff_config is True
+        assert config.cliff_body_template is not None
         assert "{% for commit" in config.cliff_body_template
 
     def test_disable_native_fallback(self):

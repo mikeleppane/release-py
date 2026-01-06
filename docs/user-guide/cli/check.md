@@ -88,6 +88,30 @@ releasio check /path/to/project
 
 ---
 
+## How It Works
+
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+flowchart TD
+    A[releasio check] --> B[Load pyproject.toml]
+    B --> C[Find latest git tag]
+    C --> D[Get commits since tag]
+    D --> E[Parse conventional commits]
+    E --> F{Any breaking<br/>changes?}
+    F -->|Yes| G[Major bump]
+    F -->|No| H{Any feat:<br/>commits?}
+    H -->|Yes| I[Minor bump]
+    H -->|No| J{Any fix/perf/<br/>docs commits?}
+    J -->|Yes| K[Patch bump]
+    J -->|No| L[No bump needed]
+    G --> M[Display preview]
+    I --> M
+    K --> M
+    L --> M
+```
+
+---
+
 ## When to Use
 
 - **Before creating a release PR** - Verify the version bump is correct

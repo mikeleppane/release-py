@@ -29,6 +29,12 @@ from rich.panel import Panel
 from releasio.config import load_config
 from releasio.core.commits import calculate_bump, filter_skip_release_commits, parse_commits
 from releasio.core.version import BumpType, Version
+from releasio.exceptions import (
+    ConfigError,
+    GitError,
+    InvalidVersionError,
+    ProjectError,
+)
 from releasio.vcs import GitRepository
 
 if TYPE_CHECKING:
@@ -122,14 +128,14 @@ def run_do_release(
     # Load configuration
     try:
         config = load_config(project_path)
-    except Exception as e:
+    except ConfigError as e:
         err_console.print(f"[red]Error loading config:[/] {e}")
         raise SystemExit(1) from e
 
     # Initialize git repository
     try:
         repo = GitRepository(project_path)
-    except Exception as e:
+    except GitError as e:
         err_console.print(f"[red]Error:[/] {e}")
         raise SystemExit(1) from e
 
@@ -157,7 +163,7 @@ def run_do_release(
         project_name = get_project_name(project_path)
         current_version_str = get_project_version(project_path)
         current_version = Version.parse(current_version_str)
-    except Exception as e:
+    except (ProjectError, InvalidVersionError) as e:
         err_console.print(f"[red]Error getting project info:[/] {e}")
         raise SystemExit(1) from e
 
@@ -190,7 +196,7 @@ def run_do_release(
     if version_override:
         try:
             next_version = Version.parse(version_override)
-        except Exception as e:
+        except InvalidVersionError as e:
             err_console.print(f"[red]Invalid version format:[/] {e}")
             raise SystemExit(1) from e
     elif is_first_release:

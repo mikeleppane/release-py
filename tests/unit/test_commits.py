@@ -406,12 +406,14 @@ class TestValidatePrTitle:
         """Non-conventional title fails validation."""
         result = validate_pr_title("Added a new feature")
         assert not result.is_valid
+        assert result.error is not None
         assert "conventional commit format" in result.error.lower()
 
     def test_invalid_commit_type(self):
         """Unknown commit type fails validation."""
         result = validate_pr_title("unknown: some change")
         assert not result.is_valid
+        assert result.error is not None
         assert "Invalid commit type" in result.error
         assert "unknown" in result.error
 
@@ -420,12 +422,14 @@ class TestValidatePrTitle:
         long_title = "feat: " + "a" * 100
         result = validate_pr_title(long_title, max_length=50)
         assert not result.is_valid
+        assert result.error is not None
         assert "exceeds 50 characters" in result.error
 
     def test_require_scope_without_scope(self):
         """Title without scope fails when scope is required."""
         result = validate_pr_title("feat: add feature", require_scope=True)
         assert not result.is_valid
+        assert result.error is not None
         assert "must include a scope" in result.error
 
     def test_require_scope_with_scope(self):
@@ -437,6 +441,7 @@ class TestValidatePrTitle:
         """Title with empty description fails validation."""
         result = validate_pr_title("feat:    ")
         assert not result.is_valid
+        assert result.error is not None
         # Empty description doesn't match regex, so it fails format validation
         assert "conventional commit format" in result.error.lower()
 
@@ -452,6 +457,7 @@ class TestValidatePrTitle:
         custom_types = frozenset(["add", "remove"])
         result = validate_pr_title("feat: new feature", allowed_types=custom_types)
         assert not result.is_valid
+        assert result.error is not None
         assert "Invalid commit type" in result.error
 
     def test_all_default_types_valid(self):
@@ -782,3 +788,59 @@ class TestCustomParsers:
 
         assert pc.commit_type == "feat"
         assert pc.is_breaking  # Detected from body
+
+    def test_invalid_regex_in_custom_parser_is_skipped(self):
+        """Custom parser with invalid regex is gracefully skipped."""
+        # Invalid regex (unclosed bracket)
+        invalid_parser = CommitParser(
+            pattern=r"^[unclosed",
+            type="feat",
+            group="Features",
+        )
+        valid_parser = CommitParser(
+            pattern=r"^:sparkles:\s*(?P<description>.+)$",
+            type="feat",
+            group="Features",
+        )
+        commit = Commit(
+            sha="abc123",
+            message=":sparkles: add new feature",
+            author_name="Test",
+            author_email="test@test.com",
+            date=datetime.now(),
+        )
+        # Should not raise, invalid parser is skipped and valid one matches
+        pc = ParsedCommit.from_commit(
+            commit,
+            breaking_pattern=r"BREAKING[ -]CHANGE:",
+            custom_parsers=[invalid_parser, valid_parser],
+        )
+
+        assert pc.is_conventional
+        assert pc.commit_type == "feat"
+        assert pc.description == "add new feature"
+
+    def test_only_invalid_regex_falls_back_to_conventional(self):
+        """When only invalid regex parser provided, falls back to conventional."""
+        invalid_parser = CommitParser(
+            pattern=r"^[unclosed",
+            type="feat",
+            group="Features",
+        )
+        commit = Commit(
+            sha="abc123",
+            message="feat: add new feature",
+            author_name="Test",
+            author_email="test@test.com",
+            date=datetime.now(),
+        )
+        # Invalid parser is skipped, falls back to conventional commit parsing
+        pc = ParsedCommit.from_commit(
+            commit,
+            breaking_pattern=r"BREAKING[ -]CHANGE:",
+            custom_parsers=[invalid_parser],
+        )
+
+        assert pc.is_conventional
+        assert pc.commit_type == "feat"
+        assert pc.description == "add new feature"

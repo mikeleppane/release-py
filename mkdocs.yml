@@ -238,6 +238,8 @@ nav:
       - System Overview: architecture/overview.md
       - Data Flow: architecture/data-flow.md
   - API Reference: reference/
+  - Troubleshooting: troubleshooting/index.md
+  - FAQ: faq.md
   - Contributing:
       - contributing/index.md
       - Development Setup: contributing/setup.md

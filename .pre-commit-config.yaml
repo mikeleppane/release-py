@@ -36,9 +36,10 @@ repos:
           - typer>=0.21.0
           - httpx>=0.28.0
           - types-toml
+          - pytest>=8.0.0
         args: ['--config-file=pyproject.toml']
         pass_filenames: false
-        entry: mypy src/
+        entry: mypy src/ tests/
 
   # Conventional commit message validation
   - repo: https://github.com/compilerla/conventional-pre-commit

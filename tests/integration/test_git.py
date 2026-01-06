@@ -127,6 +127,28 @@ class TestGitCommits:
         assert latest.body is not None
         assert "body" in latest.body
 
+    def test_get_commits_empty_repo_raises(self, tmp_path: Path):
+        """Get commits from repository with no commits raises GitError."""
+        # Create a git repo with no commits (no HEAD yet)
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        repo = GitRepository(tmp_path)
+        # Empty repo (no HEAD) raises GitError - there's no commit history to query
+        with pytest.raises(GitError, match="HEAD"):
+            repo.get_commits_since_tag(None)
+
 
 class TestGitTags:
     """Integration tests for tag operations."""
