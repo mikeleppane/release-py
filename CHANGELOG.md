@@ -1,3 +1,12 @@
+## [2.1.7] - 2026-01-06
+
+### 🐛 Bug Fixes
+
+- *(release-pr)* Remove incorrect @mentions from PR body
+
+### 🚜 Refactor
+
+- Improve code quality and add documentation
 ## [2.1.6] - 2026-01-05
 
 ### 🐛 Bug Fixes
