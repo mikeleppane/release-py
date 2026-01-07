@@ -121,6 +121,39 @@ build-backend = "hatchling.build"
         with pytest.raises(VersionNotFoundError):
             get_pyproject_version(tmp_path)
 
+    def test_update_same_version_no_op(self, tmp_path: Path):
+        """Update to same version succeeds (no-op case for first release)."""
+        pyproject = tmp_path / "pyproject.toml"
+        original_content = """\
+[project]
+name = "test"
+version = "0.1.0"
+description = "Test project"
+"""
+        pyproject.write_text(original_content)
+
+        # Updating to the same version should NOT raise an error
+        result = update_pyproject_version(tmp_path, "0.1.0")
+
+        # Should return path successfully
+        assert result == pyproject
+        # Content should be unchanged
+        assert pyproject.read_text() == original_content
+
+    def test_update_same_version_poetry_format(self, tmp_path: Path):
+        """Update to same version works with Poetry format."""
+        pyproject = tmp_path / "pyproject.toml"
+        original_content = """\
+[tool.poetry]
+name = "test"
+version = "0.1.0"
+"""
+        pyproject.write_text(original_content)
+
+        # Should not raise
+        result = update_pyproject_version(tmp_path, "0.1.0")
+        assert result == pyproject
+
 
 class TestVersionFile:
     """Integration tests for version file updates."""

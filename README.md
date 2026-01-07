@@ -52,9 +52,15 @@ pip install releasio
 pipx install releasio
 ```
 
-### Prerequisites: git-cliff
+### Optional: git-cliff (Recommended)
 
-releasio requires [git-cliff](https://git-cliff.org/) for changelog generation. **This must be installed separately** as it's a Rust binary:
+For best changelog generation, install [git-cliff](https://git-cliff.org/). This is **optional** — releasio has a built-in native changelog generator that works without git-cliff.
+
+**Why install git-cliff?**
+
+- More customizable changelog templates
+- Better handling of complex commit histories
+- Mature, battle-tested changelog generation
 
 ```bash
 # Using uv (recommended)
@@ -69,6 +75,8 @@ brew install git-cliff
 # Using scoop (Windows)
 scoop install git-cliff
 ```
+
+If git-cliff is not installed, releasio automatically uses its native changelog generator (controlled by `changelog.native_fallback = true`, which is the default).
 
 ## Quick Start
 
@@ -632,7 +640,9 @@ Each parser supports:
 
 ### Native Changelog Fallback
 
-releasio can generate changelogs natively when git-cliff is not installed. This uses your `section_headers` and `commit_template` settings.
+releasio includes a built-in changelog generator that works without git-cliff. This is **enabled by default**, so releasio works out of the box without any external dependencies.
+
+The native generator uses your `section_headers` and `commit_template` settings to produce well-formatted changelogs.
 
 ```toml
 [tool.releasio.changelog]
@@ -642,6 +652,8 @@ native_fallback = true
 # Auto-generate git-cliff config from releasio settings
 generate_cliff_config = false
 ```
+
+Set `native_fallback = false` if you want to require git-cliff and fail when it's not available.
 
 ### Build Command Hook
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -46,7 +46,10 @@ class TestGenerateChangelog:
         # Create pyproject.toml
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("releasio.core.changelog.is_git_cliff_available", return_value=True),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = MagicMock(
                 stdout="## [1.0.0] - 2024-01-01\n\n### Features\n\n- New feature",
                 returncode=0,
@@ -62,14 +65,13 @@ class TestGenerateChangelog:
             assert "Features" in result
             mock_run.assert_called_once()
 
-    def test_generate_changelog_git_cliff_not_found(self, mock_repo: MagicMock):
-        """Raise ChangelogError when git-cliff not found."""
+    def test_generate_changelog_git_cliff_not_found_fallback_disabled(self, mock_repo: MagicMock):
+        """Raise ChangelogError when git-cliff not found and native_fallback disabled."""
         version = Version(1, 0, 0)
-        config = ReleasePyConfig()
+        # Disable native fallback to force the error
+        config = ReleasePyConfig(changelog=ChangelogConfig(native_fallback=False))
 
-        with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = FileNotFoundError("git-cliff not found")
-
+        with patch("releasio.core.changelog.is_git_cliff_available", return_value=False):
             with pytest.raises(ChangelogError, match="git-cliff not found"):
                 generate_changelog(
                     repo=mock_repo,
@@ -84,7 +86,10 @@ class TestGenerateChangelog:
 
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("releasio.core.changelog.is_git_cliff_available", return_value=True),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.side_effect = subprocess.CalledProcessError(
                 1, "git-cliff", stderr="Invalid config"
             )
@@ -103,7 +108,10 @@ class TestGenerateChangelog:
 
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("releasio.core.changelog.is_git_cliff_available", return_value=True),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = MagicMock(stdout="changelog", returncode=0)
 
             generate_changelog(
@@ -123,7 +131,10 @@ class TestGenerateChangelog:
 
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("releasio.core.changelog.is_git_cliff_available", return_value=True),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = MagicMock(stdout="changelog with PRs", returncode=0)
 
             generate_changelog(
@@ -144,7 +155,10 @@ class TestGenerateChangelog:
 
         (tmp_path / "pyproject.toml").write_text("[project]\nname = 'test'\n")
 
-        with patch("subprocess.run") as mock_run:
+        with (
+            patch("releasio.core.changelog.is_git_cliff_available", return_value=True),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.return_value = MagicMock(stdout="changelog", returncode=0)
 
             generate_changelog(
@@ -156,6 +170,50 @@ class TestGenerateChangelog:
 
             call_args = mock_run.call_args[0][0]
             assert "--github-repo" not in call_args
+
+    def test_generate_changelog_native_fallback_when_git_cliff_unavailable(
+        self, mock_repo: MagicMock
+    ):
+        """Use native fallback when git-cliff is not available."""
+        version = Version(1, 0, 0)
+        # native_fallback is True by default
+        config = ReleasePyConfig()
+
+        # Create a mock commit for native fallback
+        mock_commit = Commit(
+            "abc123",
+            "feat: add new feature",
+            "Test User",
+            "test@example.com",
+            datetime(2024, 1, 1, tzinfo=UTC),
+        )
+        parsed_commit = ParsedCommit.from_commit(
+            mock_commit,
+            breaking_pattern=config.commits.breaking_pattern,
+        )
+
+        with patch("releasio.core.changelog.is_git_cliff_available", return_value=False):
+            # Pass parsed_commits directly to avoid internal parse_commits call
+            result = generate_changelog(
+                repo=mock_repo,
+                version=version,
+                config=config,
+                parsed_commits=[parsed_commit],
+            )
+
+            # Should use native fallback and include the feature
+            assert "1.0.0" in result
+            assert "feat" in result.lower() or "feature" in result.lower()
+
+    def test_is_git_cliff_available_returns_false_when_not_installed(self):
+        """Test is_git_cliff_available returns False when git-cliff not installed."""
+        with patch("shutil.which", return_value=None):
+            assert is_git_cliff_available() is False
+
+    def test_is_git_cliff_available_returns_true_when_installed(self):
+        """Test is_git_cliff_available returns True when git-cliff is installed."""
+        with patch("shutil.which", return_value="/usr/bin/git-cliff"):
+            assert is_git_cliff_available() is True
 
 
 class TestGetBumpFromGitCliff:

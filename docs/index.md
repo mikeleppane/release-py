@@ -54,8 +54,8 @@ hide:
 
     ---
 
-    Professional changelog generation with git-cliff. PR links, author attribution,
-    and customizable templates.
+    Professional changelog generation with built-in native generator or git-cliff.
+    PR links, author attribution, and customizable templates.
 
     [:octicons-arrow-right-24: Changelog guide](user-guide/changelog/index.md)
 
@@ -120,9 +120,9 @@ graph LR
 pip install releasio
 ```
 
-!!! note "Requirement"
-    releasio requires [git-cliff](https://git-cliff.org/) for changelog generation.
-    Install it via your package manager or `cargo install git-cliff`.
+!!! tip "Optional: git-cliff"
+    For advanced changelog customization, install [git-cliff](https://git-cliff.org/).
+    releasio works out of the box with its built-in native changelog generator.
 
 ### Preview a Release
 

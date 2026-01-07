@@ -231,46 +231,49 @@ def run_update(
             else:
                 console.print(f"  [yellow]⚠[/] {message}")
 
-    # Generate changelog
-    try:
-        from releasio.core.changelog import generate_changelog
-
-        # Try to get GitHub repo for richer changelog
-        github_repo_str: str | None = None
+    # Generate changelog (if enabled)
+    if config.changelog.enabled:
         try:
-            owner, repo_name = repo.parse_github_remote()
-            github_owner = config.github.owner or owner
-            github_repo = config.github.repo or repo_name
-            github_repo_str = f"{github_owner}/{github_repo}"
-        except Exception:
-            console.print(
-                "  [dim][yellow]Note:[/] Could not detect GitHub repository. "
-                "Changelog will not include PR links.[/]"
+            from releasio.core.changelog import generate_changelog
+
+            # Try to get GitHub repo for richer changelog
+            github_repo_str: str | None = None
+            try:
+                owner, repo_name = repo.parse_github_remote()
+                github_owner = config.github.owner or owner
+                github_repo = config.github.repo or repo_name
+                github_repo_str = f"{github_owner}/{github_repo}"
+            except Exception:
+                console.print(
+                    "  [dim][yellow]Note:[/] Could not detect GitHub repository. "
+                    "Changelog will not include PR links.[/]"
+                )
+
+            changelog_content = generate_changelog(
+                repo=repo,
+                version=next_version,
+                config=config,
+                github_repo=github_repo_str,
+                console=console,
             )
 
-        changelog_content = generate_changelog(
-            repo=repo,
-            version=next_version,
-            config=config,
-            github_repo=github_repo_str,
-            console=console,
-        )
+            # Write changelog
+            changelog_path = project_path / config.changelog.path
+            if changelog_path.exists():
+                existing = changelog_path.read_text()
+                # Insert new content after header
+                # This is a simplified approach; git-cliff handles this better
+                new_content = changelog_content + "\n" + existing
+            else:
+                new_content = changelog_content
 
-        # Write changelog
-        changelog_path = project_path / config.changelog.path
-        if changelog_path.exists():
-            existing = changelog_path.read_text()
-            # Insert new content after header
-            # This is a simplified approach; git-cliff handles this better
-            new_content = changelog_content + "\n" + existing
-        else:
-            new_content = changelog_content
-
-        changelog_path.write_text(new_content)
-        console.print(f"  [green]✓[/] Updated {config.changelog.path}")
-    except Exception as e:
-        err_console.print(f"[red]Error generating changelog:[/] {e}")
-        raise SystemExit(1) from e
+            changelog_path.write_text(new_content)
+            console.print(f"  [green]✓[/] Updated {config.changelog.path}")
+        except Exception as e:
+            err_console.print(f"[red]Error generating changelog:[/] {e}")
+            raise SystemExit(1) from e
+    else:
+        console.print("  [dim]Changelog generation disabled[/]")
 
     # Run post-bump hooks
     if config.hooks.post_bump:

@@ -171,15 +171,21 @@ def update_pyproject_version(path: Path | None, new_version: str) -> Path:
             updated = True
 
     if not updated:
+        # Check if the version is already the target version (no-op case)
+        # This happens on first release when initial_version == current version
+        version_pattern = rf'version\s*=\s*["\']({re.escape(new_version)})["\']'
+        if re.search(version_pattern, content):
+            # Version is already correct, nothing to do
+            return pyproject_path
         raise VersionNotFoundError(
             f"Could not find version to update in {pyproject_path}. "
             "Expected [project].version or [tool.poetry].version."
         )
 
+    # If content unchanged after regex, version might already be the target
     if content == original_content:
-        raise ProjectError(
-            f"Version in {pyproject_path} was not updated. It may already be {new_version}."
-        )
+        # This is actually fine - version was already set to new_version
+        return pyproject_path
 
     pyproject_path.write_text(content)
     return pyproject_path

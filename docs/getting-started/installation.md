@@ -20,9 +20,9 @@
     pipx install releasio
     ```
 
-## Install git-cliff
+## Optional: Install git-cliff (Recommended)
 
-releasio uses [git-cliff](https://git-cliff.org/) for changelog generation. Install it using your preferred method:
+releasio works out of the box with its built-in native changelog generator. For more advanced changelog customization, you can optionally install [git-cliff](https://git-cliff.org/):
 
 === "Homebrew (macOS/Linux)"
 
@@ -48,19 +48,20 @@ releasio uses [git-cliff](https://git-cliff.org/) for changelog generation. Inst
     scoop install git-cliff
     ```
 
-!!! tip "Native Fallback"
-    If git-cliff is not installed, releasio will use a basic native changelog
-    generator. For best results, install git-cliff.
+!!! success "No External Dependencies Required"
+    **git-cliff is optional.** releasio includes a native changelog generator that's
+    enabled by default (`native_fallback = true`). Install git-cliff only if you
+    need advanced features like custom Tera templates or complex commit parsing.
 
 ## Verify Installation
 
-Check that everything is installed correctly:
+Check that releasio is installed correctly:
 
 ```bash
 # Check releasio
 releasio --version
 
-# Check git-cliff
+# Optional: Check git-cliff (if installed)
 git-cliff --version
 ```
 

@@ -6,7 +6,7 @@ Get releasio running in 5 minutes.
 
 - Python project with `pyproject.toml`
 - Git repository with commit history
-- [git-cliff](installation.md#install-git-cliff) installed
+- *(Optional)* [git-cliff](installation.md#optional-install-git-cliff-recommended) for advanced changelog customization
 
 ## Step 1: Install releasio
 

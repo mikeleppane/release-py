@@ -337,13 +337,19 @@ commit_parsers = [
 
 ## Fallback Behavior
 
-If git-cliff is unavailable, releasio falls back to native generation:
+If git-cliff is unavailable, releasio automatically falls back to native generation (enabled by default):
 
 ```toml title=".releasio.toml"
 [changelog]
-engine = "git-cliff"  # Try git-cliff first
-fallback_to_native = true  # Fall back to native if unavailable
+# Native fallback is enabled by default (true)
+# Set to false to require git-cliff and fail if not available
+native_fallback = true
 ```
+
+!!! info "git-cliff is Optional"
+    releasio works without git-cliff installed. The native changelog generator
+    handles most use cases. Only install git-cliff if you need advanced Tera
+    templates or custom commit parsing.
 
 ---
 
@@ -355,7 +361,9 @@ fallback_to_native = true  # Fall back to native if unavailable
 Warning: git-cliff not available, using native generator
 ```
 
-**Solution**: Install git-cliff or set `fallback_to_native = true`.
+**This is normal behavior.** releasio automatically uses its native changelog
+generator when git-cliff is not installed. If you want to require git-cliff,
+set `native_fallback = false` in your config.
 
 ### Template Errors
 

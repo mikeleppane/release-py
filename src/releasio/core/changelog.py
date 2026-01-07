@@ -29,9 +29,15 @@ from releasio.exceptions import ChangelogError, GitCliffError
 
 if TYPE_CHECKING:
     from releasio.config.models import ChangelogConfig, ReleasePyConfig
-    from releasio.core.commits import ParsedCommit
     from releasio.core.version import Version
     from releasio.vcs.git import GitRepository
+
+# ParsedCommit is used at runtime in generate_changelog, so import it conditionally
+# to avoid circular imports
+try:
+    from releasio.core.commits import ParsedCommit
+except ImportError:
+    ParsedCommit = None  # type: ignore[misc,assignment]
 
 
 def get_bump_from_git_cliff(
@@ -111,43 +117,81 @@ def _parse_bump_type(output: str) -> BumpType:
 def generate_changelog(
     repo: GitRepository,
     version: Version,
-    config: ReleasePyConfig,  # noqa: ARG001
+    config: ReleasePyConfig,
     *,
     unreleased_only: bool = True,
     github_repo: str | None = None,
     console: Console | None = None,
+    parsed_commits: list[ParsedCommit] | None = None,
 ) -> str:
-    """Generate changelog content using git-cliff.
+    """Generate changelog content using git-cliff with native fallback.
 
     Args:
         repo: Git repository instance
         version: Version being released
-        config: Release configuration (reserved for future git-cliff config)
+        config: Release configuration
         unreleased_only: Only generate for unreleased changes
         github_repo: GitHub repo in "owner/repo" format for enhanced changelog
                     (adds PR links, @usernames, first-time contributor badges)
         console: Rich console for progress indicators (optional)
+        parsed_commits: Pre-parsed commits for native fallback (optional, will be
+                       fetched and parsed if not provided and fallback needed)
 
     Returns:
         Generated changelog content as string
 
     Raises:
         GitCliffError: If git-cliff command fails
-        ChangelogError: If changelog generation fails
+        ChangelogError: If changelog generation fails and native fallback is disabled
     """
-    try:
-        return _run_git_cliff(
-            repo=repo,
-            version=version,
-            unreleased_only=unreleased_only,
-            github_repo=github_repo,
-            console=console,
-        )
-    except FileNotFoundError as e:
+    # Check if git-cliff is available
+    if is_git_cliff_available():
+        try:
+            return _run_git_cliff(
+                repo=repo,
+                version=version,
+                unreleased_only=unreleased_only,
+                github_repo=github_repo,
+                console=console,
+            )
+        except FileNotFoundError:
+            # Shouldn't happen since we checked, but handle it anyway
+            pass
+
+    # git-cliff not available - use native fallback if enabled
+    if not config.changelog.native_fallback:
         raise ChangelogError(
-            "git-cliff not found. This may indicate a broken installation. "
-            "Try reinstalling: pip install --force-reinstall releasio"
-        ) from e
+            "git-cliff not found and native_fallback is disabled. "
+            "Install git-cliff or enable native_fallback in config."
+        )
+
+    # Get parsed commits if not provided
+    if parsed_commits is None:
+        from releasio.core.commits import parse_commits
+
+        tag_pattern = f"{config.version.tag_prefix}*"
+        latest_tag = repo.get_latest_tag(tag_pattern)
+        commits = repo.get_commits_since_tag(latest_tag)
+        parsed_commits = parse_commits(commits, config.commits)
+
+    # Generate using native fallback
+    first_time_contributors = None
+    if config.changelog.show_first_time_contributors:
+        first_time_contributors = get_first_time_contributors(repo, parsed_commits)
+
+    dependency_updates = None
+    if config.changelog.include_dependency_updates:
+        tag_pattern = f"{config.version.tag_prefix}*"
+        previous_tag = repo.get_latest_tag(tag_pattern)
+        dependency_updates = parse_dependency_updates(repo, previous_tag)
+
+    return generate_native_changelog(
+        parsed_commits=parsed_commits,
+        version=version,
+        config=config.changelog,
+        first_time_contributors=first_time_contributors,
+        dependency_updates=dependency_updates,
+    )
 
 
 def _run_git_cliff(

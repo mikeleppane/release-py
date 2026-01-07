@@ -446,3 +446,42 @@ class TestGitHubRemoteWarning:
             # Should show warning about missing GitHub remote
             assert "Could not detect GitHub repository" in result.stdout
             assert "Changelog will not include PR links" in result.stdout
+
+
+class TestChangelogEnabledConfig:
+    """Tests for changelog.enabled configuration option."""
+
+    def test_update_skips_changelog_when_disabled(self, repo_with_feat_commit: Path):
+        """update skips changelog generation when changelog.enabled=false."""
+        # Create config with changelog disabled
+        config_file = repo_with_feat_commit / ".releasio.toml"
+        config_file.write_text(
+            """
+allow_dirty = true
+[changelog]
+enabled = false
+"""
+        )
+
+        result = runner.invoke(app, ["update", str(repo_with_feat_commit), "--execute"])
+
+        assert result.exit_code == 0
+        # Should indicate changelog is disabled
+        assert "Changelog generation disabled" in result.stdout
+        # CHANGELOG.md should NOT be created
+        changelog = repo_with_feat_commit / "CHANGELOG.md"
+        assert not changelog.exists()
+
+    def test_update_creates_changelog_when_enabled(self, repo_with_feat_commit: Path):
+        """update creates changelog when changelog.enabled=true (default)."""
+        with patch("releasio.core.changelog.generate_changelog") as mock_changelog:
+            mock_changelog.return_value = "## [1.1.0] - 2024-01-01\n\n### Features"
+
+            result = runner.invoke(app, ["update", str(repo_with_feat_commit), "--execute"])
+
+            assert result.exit_code == 0
+            # Should NOT say changelog is disabled
+            assert "Changelog generation disabled" not in result.stdout
+            # CHANGELOG.md should be created
+            changelog = repo_with_feat_commit / "CHANGELOG.md"
+            assert changelog.exists()
